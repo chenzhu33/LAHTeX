@@ -15,14 +15,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import lah.spectre.interfaces.IClient;
+import lah.spectre.interfaces.IFileSupplier;
+import lah.spectre.process.TimedShell;
+import lah.spectre.stream.Streams;
 import lah.tex.core.SystemFileNotFoundException;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstallationResult;
 import lah.tex.interfaces.IInstaller;
-import lah.utils.spectre.interfaces.FileSupplier;
-import lah.utils.spectre.interfaces.ProgressListener;
-import lah.utils.spectre.process.TimedShell;
-import lah.utils.spectre.stream.Streams;
 
 public class Installer extends PkgManBase implements IInstaller {
 
@@ -113,11 +113,14 @@ public class Installer extends PkgManBase implements IInstaller {
 	}
 
 	public synchronized IInstallationResult install(
-			ProgressListener<IInstallationResult> progress_listener,
-			FileSupplier file_supplier, String[] package_names,
-			boolean ignore_installed) {
+			IClient<IInstallationResult> client, IFileSupplier file_supplier,
+			String[] package_names, boolean ignore_installed) {
 		InstallationResult result = new InstallationResult();
 		result.setRequestedPackages(package_names);
+
+		// inform the listener that the result is initialized
+		if (client != null)
+			client.onServerReady(result);
 
 		// copy xz, busybox, ... to private directory
 		if (package_names.length == 1 && package_names[0].equals("/"))
@@ -128,19 +131,13 @@ public class Installer extends PkgManBase implements IInstaller {
 			pkgs_to_install = addAllDependentPackages(package_names);
 		} catch (Exception e) {
 			result.setException(e);
-			if (progress_listener != null)
-				progress_listener.onProgress(result);
 			return result;
 		}
 		result.setPendingPackages(pkgs_to_install);
-		if (progress_listener != null)
-			progress_listener.onProgress(result);
 
 		// FileRelocator relocator = new TDSFileLocator(texmf_root);
 		for (int i = 0; i < pkgs_to_install.length; i++) {
 			result.setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
-			if (progress_listener != null)
-				progress_listener.onProgress(result);
 			try {
 				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
 						.substring(0, pkgs_to_install[i].length() - 5) + ARCH
@@ -151,7 +148,6 @@ public class Installer extends PkgManBase implements IInstaller {
 
 				if (pkg_file == null) {
 					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-					progress_listener.onProgress(result);
 					continue;
 				}
 
@@ -170,31 +166,24 @@ public class Installer extends PkgManBase implements IInstaller {
 							pkg_file.getParentFile());
 					result.setPackageState(i,
 							IInstallationResult.PACKAGE_SUCCESSFULLY_INSTALLED);
-					if (progress_listener != null)
-						progress_listener.onProgress(result);
 				} else {
 					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-					if (progress_listener != null)
-						progress_listener.onProgress(result);
 				}
 			} catch (Exception e) {
 				result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-				if (progress_listener != null)
-					progress_listener.onProgress(result);
 			}
 		}
+		// post download, extract
 		try {
 			relocate();
 			result.setState(IInstallationResult.STATE_INSTALLATION_FINISH);
 		} catch (Exception e) {
 			result.setException(e);
 		}
-		if (progress_listener != null)
-			progress_listener.onProgress(result);
 		return result;
 	}
 
-	private IInstallationResult installSystem(FileSupplier file_supplier) {
+	private IInstallationResult installSystem(IFileSupplier file_supplier) {
 		InstallationResult result = new InstallationResult();
 		try {
 			String[] app_data_files = { "xz", "busybox", "desc", "depend",

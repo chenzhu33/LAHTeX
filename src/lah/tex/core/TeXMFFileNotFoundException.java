@@ -1,9 +1,9 @@
 package lah.tex.core;
 
+import lah.spectre.CollectionPrinter;
 import lah.tex.interfaces.ISeeker;
-import lah.utils.spectre.CollectionPrinter;
 
-public class TeXMFInputFileNotFoundException extends Exception {
+public class TeXMFFileNotFoundException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
@@ -11,10 +11,10 @@ public class TeXMFInputFileNotFoundException extends Exception {
 
 	protected String[] missing_package;
 
-	TeXMFInputFileNotFoundException() {
+	TeXMFFileNotFoundException() {
 	}
 
-	public TeXMFInputFileNotFoundException(String missing_file,
+	public TeXMFFileNotFoundException(String missing_file,
 			String default_file_extension) {
 		this.missing_file = missing_file
 				+ (missing_file.indexOf('.') < 0

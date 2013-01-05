@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
+import lah.spectre.stream.Streams;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.ILoader;
 import lah.tex.interfaces.IPackage;
 import lah.tex.interfaces.IPackageListRetrievalResult;
-import lah.utils.spectre.stream.Streams;
 
 public class Loader extends PkgManBase implements ILoader {
 

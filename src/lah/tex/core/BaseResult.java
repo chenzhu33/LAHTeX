@@ -28,6 +28,18 @@ public class BaseResult implements IResult {
 		return (exception != null);
 	}
 
+	@Override
+	public boolean isComplete() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isSuccessful() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	public void setException(Exception e) {
 		exception = e;
 	}

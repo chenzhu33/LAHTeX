@@ -3,11 +3,11 @@ package lah.tex.compile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lah.spectre.interfaces.IClient;
+import lah.spectre.stream.IBufferProcessor;
 import lah.tex.core.KpathseaException;
-import lah.tex.core.TeXMFInputFileNotFoundException;
+import lah.tex.core.TeXMFFileNotFoundException;
 import lah.tex.interfaces.ICompilationResult;
-import lah.utils.spectre.interfaces.ProgressListener;
-import lah.utils.spectre.stream.IBufferProcessor;
 
 class TeXMFOutputAnalyzer implements IBufferProcessor {
 
@@ -20,6 +20,8 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 
 	private StringBuilder accumulated_error_message;
 
+	private IClient<ICompilationResult> client;
+
 	private String default_file_extension = "tex";
 
 	private final Matcher kpathsea_matcher = Pattern.compile(
@@ -27,12 +29,12 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 
 	private StringBuilder output_buffer = new StringBuilder();
 
-	private boolean pdftex_error = false;
-
 	// Pattern for missing fonts, probably not necessary
 	// Pattern.compile("! Font \\\\[^=]*=([^\\s]*)\\s"),
 	// Pattern.compile("! Font [^\\n]*file\\:([^\\:\\n]*)\\:"),
 	// Pattern.compile("! Font \\\\[^/]*/([^/]*)/")
+
+	private boolean pdftex_error = false;
 
 	private final Matcher pdftex_error_end = Pattern.compile(
 			" ==> Fatal error occurred, no output PDF file produced!").matcher(
@@ -41,10 +43,10 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 	private final Matcher pdftex_error_start = Pattern.compile(
 			"!pdfTeX error: .+").matcher("");
 
+	// private IProgressListener<ICompilationResult> progress_listener;
+
 	private final Matcher pdftex_missing_file_matcher = Pattern.compile(
 			"!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
-
-	ProgressListener<ICompilationResult> progress_listener;
 
 	private Matcher single_line_matcher = Pattern.compile("(.+)\n").matcher("");
 
@@ -74,28 +76,21 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 		String line;
 		while (single_line_matcher.find()) {
 			line = single_line_matcher.group(1);
-			// System.out.println(line);
-
 			// Get pdfTeX error: go to accumulation state
 			if (pdftex_error_start.reset(line).matches()) {
 				pdftex_error = true;
 				accumulated_error_message = new StringBuilder(line);
 			}
-
 			if (pdftex_error) {
 				// End of pdfTeX error: identify the missing file
 				if (pdftex_error_end.reset(line).matches()) {
-					// System.out.println("Accumulated pdfTeX error: "
-					// + accumulated_error_message);
 					pdftex_error = false;
 					// now we parse the error for missing file
 					if (pdftex_missing_file_matcher.reset(
 							accumulated_error_message).matches()) {
-						Exception e = new TeXMFInputFileNotFoundException(
+						throw new TeXMFFileNotFoundException(
 								pdftex_missing_file_matcher.group(1),
 								default_file_extension);
-						texmf_result.setException(e);
-						throw e;
 					}
 				} else {
 					// continue accumulating the error
@@ -104,26 +99,18 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 				}
 			}
 
-			// Get Kpathsea error
-			if (kpathsea_matcher.reset(line).matches()) {
-				Exception e = new KpathseaException(kpathsea_matcher.group(1));
-				texmf_result.setException(e);
-				throw e;
-			}
+			// Get Kpathsea error if any
+			if (kpathsea_matcher.reset(line).matches())
+				throw new KpathseaException(kpathsea_matcher.group(1));
 
 			// Looking for missing TeX|MF files
 			for (int i = 0; i < tex_missing_file_matchers.length; i++) {
 				if (tex_missing_file_matchers[i].reset(line).matches()) {
-					Exception e;
-					if (i == 3)
-						e = new TeXMFInputFileNotFoundException("hyphen.tex",
-								default_file_extension);
-					else
-						e = new TeXMFInputFileNotFoundException(
-								tex_missing_file_matchers[i].group(1),
-								default_file_extension);
-					texmf_result.setException(e);
-					throw e;
+					throw (i == 3 ? new TeXMFFileNotFoundException(
+							"hyphen.tex", default_file_extension)
+							: new TeXMFFileNotFoundException(
+									tex_missing_file_matchers[i].group(1),
+									default_file_extension));
 				}
 			}
 
@@ -132,30 +119,22 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 			texmf_result.appendLog(line);
 			output_buffer.delete(0, single_line_matcher.end());
 		}
-
-		// Notify the listener if we manage to process this buffer without
-		// encountering any exception
-		if (progress_listener != null) {
-			texmf_result.setState(ICompilationResult.STATE_IN_PROGRESS);
-			progress_listener.onProgress(texmf_result);
-		}
 	}
 
 	public void reset() {
 		output_buffer.delete(0, output_buffer.length());
 		texmf_result = new TeXMFResult();
 		texmf_result.setState(ICompilationResult.STATE_INIT);
-		if (progress_listener != null)
-			progress_listener.onProgress(texmf_result);
+		if (client != null)
+			client.onServerReady(texmf_result);
+	}
+
+	public void setClient(IClient<ICompilationResult> client) {
+		this.client = client;
 	}
 
 	void setDefaultFileExtension(String ext) {
 		default_file_extension = ext;
-	}
-
-	void setProgressListener(
-			ProgressListener<ICompilationResult> progress_listener) {
-		this.progress_listener = progress_listener;
 	}
 
 }

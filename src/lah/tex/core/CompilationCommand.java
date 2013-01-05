@@ -2,8 +2,8 @@ package lah.tex.core;
 
 import java.io.File;
 
+import lah.spectre.FileName;
 import lah.tex.interfaces.ICompilationCommand;
-import lah.utils.spectre.FileName;
 
 public class CompilationCommand implements ICompilationCommand {
 

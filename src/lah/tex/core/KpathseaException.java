@@ -6,7 +6,7 @@ package lah.tex.core;
  * @author L.A.H.
  * 
  */
-public class KpathseaException extends TeXMFInputFileNotFoundException {
+public class KpathseaException extends TeXMFFileNotFoundException {
 
 	private static final long serialVersionUID = 1L;
 

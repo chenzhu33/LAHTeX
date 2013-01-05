@@ -1,7 +1,11 @@
 package lah.tex.interfaces;
 
-import lah.utils.spectre.interfaces.ExceptionWrapper;
+import lah.spectre.interfaces.IExceptionWrapper;
 
-public interface IResult extends ExceptionWrapper {
+public interface IResult extends IExceptionWrapper {
+
+	boolean isComplete();
+
+	boolean isSuccessful();
 
 }

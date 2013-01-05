@@ -3,8 +3,8 @@ package lah.tex.pkgman;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
+import lah.spectre.stream.Streams;
 import lah.tex.interfaces.IEnvironment;
-import lah.utils.spectre.stream.Streams;
 
 public class Seeker extends PkgManBase implements lah.tex.interfaces.ISeeker {
 

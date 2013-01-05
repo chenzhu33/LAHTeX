@@ -1,13 +1,10 @@
 package lah.tex.interfaces;
 
-import lah.utils.spectre.interfaces.ProgressListener;
+import lah.spectre.interfaces.IClient;
 
 public interface ICompiler {
 
-	ICompilationResult compile(
-			ProgressListener<ICompilationResult> progress_listener,
+	ICompilationResult compile(IClient<ICompilationResult> client,
 			ICompilationCommand command);
-
-	void updateFontMap() throws Exception;
 
 }

@@ -10,20 +10,20 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lah.spectre.CommandLineArguments;
+import lah.spectre.interfaces.IClient;
+import lah.spectre.process.TimedShell;
+import lah.spectre.stream.StreamRedirector;
+import lah.spectre.stream.Streams;
 import lah.tex.core.BaseResult;
 import lah.tex.core.KpathseaException;
-import lah.tex.core.TeXMFInputFileNotFoundException;
+import lah.tex.core.TeXMFFileNotFoundException;
 import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 import lah.tex.interfaces.ICompiler;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IResult;
 import lah.tex.interfaces.ISeeker;
-import lah.utils.spectre.CommandLineArguments;
-import lah.utils.spectre.interfaces.ProgressListener;
-import lah.utils.spectre.process.TimedShell;
-import lah.utils.spectre.stream.StreamRedirector;
-import lah.utils.spectre.stream.Streams;
 
 public class Compiler implements ICompiler {
 
@@ -81,56 +81,26 @@ public class Compiler implements ICompiler {
 	}
 
 	@Override
-	public ICompilationResult compile(
-			ProgressListener<ICompilationResult> progress_listener,
+	public ICompilationResult compile(IClient<ICompilationResult> client,
 			ICompilationCommand cmd) {
 		String[] command = cmd.getCommand();
-		output_analyzer.setProgressListener(progress_listener);
 		output_analyzer.setDefaultFileExtension("tex");
-		TeXMFResult result = executeTeXMF(command, cmd.getDirectory(),
-				output_analyzer, compilation_timeout, true, false);
-		// while (true) {
-		// result = executeTeXMF(command, cmd.getDirectory(), output_analyzer,
-		// compilation_timeout, true, false);
-		// postProcessResult(result);
-		// if (result.hasException()
-		// && result.getException() instanceof KpathseaException
-		// && ((KpathseaException) result.getException())
-		// .getMissingPackage() == null) {
-		// IResult temp_result = runKpathsea(((KpathseaException) result
-		// .getException()).getCommand());
-		// if (temp_result.hasException()) {
-		// result.setException(temp_result.getException());
-		// break;
-		// }
-		// } else {
-		// result.setState(ICompilationResult.STATE_COMPLETE);
-		// result.setCompilationCommand(cmd);
-		// break;
-		// }
-		// }
+		TeXMFResult result = executeTeXMF(client, command, cmd.getDirectory(),
+				compilation_timeout, true, false);
 		result.setCompilationCommand(cmd);
-		if (progress_listener != null)
-			progress_listener.onProgress(result);
 		return result;
 	}
 
-	private TeXMFResult executeTeXMF(String[] cmd, File dir,
-			TeXMFOutputAnalyzer output_analyzer, long timeout) {
-		// disable progress reporting
-		output_analyzer.setProgressListener(null);
-		return executeTeXMF(cmd, dir, output_analyzer, timeout, true, true);
-	}
-
-	private synchronized TeXMFResult executeTeXMF(String[] cmd, File dir,
-			TeXMFOutputAnalyzer output_analyzer, long timeout,
-			boolean mklsr_pre, boolean mklsr_post) {
+	private synchronized TeXMFResult executeTeXMF(
+			IClient<ICompilationResult> client, String[] cmd, File dir,
+			long timeout, boolean mklsr_pre, boolean mklsr_post) {
 		TeXMFResult result;
 		while (true) {
 			try {
 				if (mklsr_pre)
 					makeLSR();
 				cmd[0] = getTeXMFProgram(cmd[0]);
+				output_analyzer.setClient(client);
 				shell.fork(cmd, dir, output_analyzer, timeout);
 				result = output_analyzer.getTeXMFResult();
 				if (!result.hasException() && mklsr_post) {
@@ -146,7 +116,11 @@ public class Compiler implements ICompiler {
 				else
 					result.setException(e);
 			}
+
 			postProcessResult(result);
+
+			// resolve KpathseaException that does not require install new
+			// package
 			if (result.hasException()
 					&& result.getException() instanceof KpathseaException
 					&& ((KpathseaException) result.getException())
@@ -163,6 +137,10 @@ public class Compiler implements ICompiler {
 			}
 		}
 		return result;
+	}
+
+	private TeXMFResult executeTeXMF(String[] cmd, File dir, long timeout) {
+		return executeTeXMF(null, cmd, dir, timeout, true, true);
 	}
 
 	private String getRealSize(int pointsize) {
@@ -207,7 +185,7 @@ public class Compiler implements ICompiler {
 			makeKpathseaTEXMFCNF();
 			return program_file.getAbsolutePath();
 		} else {
-			TeXMFInputFileNotFoundException exc = new TeXMFInputFileNotFoundException(
+			TeXMFFileNotFoundException exc = new TeXMFFileNotFoundException(
 					program_file.getName(), null);
 			exc.identifyMissingPackage(seeker);
 			throw exc;
@@ -305,8 +283,7 @@ public class Compiler implements ICompiler {
 				cmd[cmd.length - 1] = name + ".ini"; // the *.ini input file
 
 				output_analyzer.setDefaultFileExtension(default_ext);
-				return executeTeXMF(cmd, fmt_loc, output_analyzer,
-						make_fmt_timeout);
+				return executeTeXMF(cmd, fmt_loc, make_fmt_timeout);
 			}
 			return null;
 		} catch (Exception e) {
@@ -316,14 +293,14 @@ public class Compiler implements ICompiler {
 	}
 
 	private void makeKpathseaTEXMFCNF() throws IOException,
-			TeXMFInputFileNotFoundException {
+			TeXMFFileNotFoundException {
 		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory()
 				+ "/texmf.cnf");
 		if (!texmfcnf_file.exists()) {
 			File texmfcnf_src = new File(environment.getTeXMFRootDirectory()
 					+ "/texmf/web2c/texmf.cnf");
 			if (!texmfcnf_src.exists())
-				throw new TeXMFInputFileNotFoundException("texmf.cnf", null);
+				throw new TeXMFFileNotFoundException("texmf.cnf", null);
 			BufferedReader reader = new BufferedReader(new FileReader(
 					texmfcnf_src));
 			FileWriter writer = new FileWriter(texmfcnf_file);
@@ -518,12 +495,12 @@ public class Compiler implements ICompiler {
 				+ dpi);
 		pk_loc.mkdirs();
 		IResult mfresult = executeTeXMF(new String[] { "mf", arg }, pk_loc,
-				output_analyzer, make_pk_font_timeout);
+				make_pk_font_timeout);
 		if (mfresult != null && mfresult.hasException())
 			return mfresult;
 		else
 			return executeTeXMF(new String[] { "gftopk", gf_name, pk_name },
-					pk_loc, output_analyzer, make_pk_font_timeout);
+					pk_loc, make_pk_font_timeout);
 	}
 
 	/**
@@ -537,15 +514,14 @@ public class Compiler implements ICompiler {
 		File tfm_loc = new File(texmf_var + "/fonts/tfm/");
 		tfm_loc.mkdirs();
 		return executeTeXMF(new String[] { "mf", arg }, tfm_loc,
-				output_analyzer, make_font_tfm_timeout);
+				make_font_tfm_timeout);
 	}
 
 	private void postProcessResult(IResult result) {
-		if (result != null
-				&& result.hasException()
-				&& result.getException() instanceof TeXMFInputFileNotFoundException) {
+		if (result != null && result.hasException()
+				&& result.getException() instanceof TeXMFFileNotFoundException) {
 			try {
-				((TeXMFInputFileNotFoundException) result.getException())
+				((TeXMFFileNotFoundException) result.getException())
 						.identifyMissingPackage(seeker);
 			} catch (Exception e) {
 				result.setException(e);
@@ -569,11 +545,6 @@ public class Compiler implements ICompiler {
 			// System.out.println("Invalid command!");
 			return null;
 		}
-	}
-
-	@Override
-	public void updateFontMap() throws Exception {
-
 	}
 
 }

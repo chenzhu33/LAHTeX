@@ -2,6 +2,8 @@ package lah.tex;
 
 import java.util.Set;
 
+import lah.spectre.interfaces.IClient;
+import lah.spectre.interfaces.IFileSupplier;
 import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 import lah.tex.interfaces.ICompiler;
@@ -14,8 +16,6 @@ import lah.tex.interfaces.ISeeker;
 import lah.tex.pkgman.Installer;
 import lah.tex.pkgman.Loader;
 import lah.tex.pkgman.Seeker;
-import lah.utils.spectre.interfaces.FileSupplier;
-import lah.utils.spectre.interfaces.ProgressListener;
 
 class TeXMF extends AbstractTeXMF {
 
@@ -40,10 +40,9 @@ class TeXMF extends AbstractTeXMF {
 	}
 
 	@Override
-	public ICompilationResult compile(
-			ProgressListener<ICompilationResult> progress_listener,
+	public ICompilationResult compile(IClient<ICompilationResult> client,
 			ICompilationCommand command) {
-		return getCompiler().compile(progress_listener, command);
+		return getCompiler().compile(client, command);
 	}
 
 	private ICompiler getCompiler() {
@@ -77,12 +76,11 @@ class TeXMF extends AbstractTeXMF {
 	}
 
 	@Override
-	public IInstallationResult install(
-			ProgressListener<IInstallationResult> progress_listener,
-			FileSupplier package_supplier, String[] package_names,
+	public IInstallationResult install(IClient<IInstallationResult> client,
+			IFileSupplier package_supplier, String[] package_names,
 			boolean ignore_installed) {
-		return getInstaller().install(progress_listener, package_supplier,
-				package_names, ignore_installed);
+		return getInstaller().install(client, package_supplier, package_names,
+				ignore_installed);
 	}
 
 	@Override
@@ -93,11 +91,6 @@ class TeXMF extends AbstractTeXMF {
 	@Override
 	public String[] seekFile(String query) throws Exception {
 		return getSeeker().seekFile(query);
-	}
-
-	@Override
-	public void updateFontMap() throws Exception {
-		getCompiler().updateFontMap();
 	}
 
 }
