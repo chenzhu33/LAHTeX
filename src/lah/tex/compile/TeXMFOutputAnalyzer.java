@@ -48,7 +48,8 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 	private final Matcher pdftex_missing_file_matcher = Pattern.compile(
 			"!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
 
-	private Matcher single_line_matcher = Pattern.compile("(.+)\n").matcher("");
+	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
+			.matcher("");
 
 	private final Matcher[] tex_missing_file_matchers = {
 			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*")
@@ -61,7 +62,7 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 					"! OOPS! I can't find any hyphenation patterns for US english.")
 					.matcher("") };
 
-	TeXMFResult texmf_result;
+	private TeXMFResult texmf_result;
 
 	public TeXMFResult getTeXMFResult() {
 		if (texmf_result == null)
@@ -76,6 +77,11 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 		String line;
 		while (single_line_matcher.find()) {
 			line = single_line_matcher.group(1);
+
+			// Always append the log
+			texmf_result.appendLog(line);
+			output_buffer.delete(0, single_line_matcher.end());
+
 			// Get pdfTeX error: go to accumulation state
 			if (pdftex_error_start.reset(line).matches()) {
 				pdftex_error = true;
@@ -113,11 +119,6 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 									default_file_extension));
 				}
 			}
-
-			// Looking for other warning, error, badbox for the log & notify the
-			// progress listener
-			texmf_result.appendLog(line);
-			output_buffer.delete(0, single_line_matcher.end());
 		}
 	}
 

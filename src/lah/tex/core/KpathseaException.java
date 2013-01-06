@@ -13,7 +13,7 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	private String kpse_command;
 
 	public KpathseaException(String kpathsea_command) {
-		System.out.println("KpathseaException : " + kpathsea_command);
+		// System.out.println("KpathseaException : " + kpathsea_command);
 		kpse_command = kpathsea_command.trim();
 		String name = kpse_command.substring(kpse_command.lastIndexOf(' '))
 				.trim();

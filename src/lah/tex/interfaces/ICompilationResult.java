@@ -14,7 +14,7 @@ public interface ICompilationResult extends IResult {
 
 	ICompilationCommand getCompilationCommand();
 
-	LogLine[] getLogLines(int start);
+	LogLine getLogLine(int index);
 
 	File getOutputFile();
 
