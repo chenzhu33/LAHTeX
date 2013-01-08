@@ -5,13 +5,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lah.spectre.CommandLineArguments;
 import lah.spectre.interfaces.IClient;
+import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
@@ -22,7 +22,6 @@ import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 import lah.tex.interfaces.ICompiler;
 import lah.tex.interfaces.IEnvironment;
-import lah.tex.interfaces.IResult;
 import lah.tex.interfaces.ISeeker;
 
 public class Compiler implements ICompiler {
@@ -82,11 +81,11 @@ public class Compiler implements ICompiler {
 
 	@Override
 	public ICompilationResult compile(IClient<ICompilationResult> client,
-			ICompilationCommand cmd) {
+			ICompilationCommand cmd, long timeout) {
 		String[] command = cmd.getCommand();
 		output_analyzer.setDefaultFileExtension("tex");
 		TeXMFResult result = executeTeXMF(client, command, cmd.getDirectory(),
-				compilation_timeout, true, false);
+				timeout == 0 ? compilation_timeout : timeout, true, false);
 		result.setCompilationCommand(cmd);
 		return result;
 	}
@@ -292,15 +291,15 @@ public class Compiler implements ICompiler {
 		}
 	}
 
-	private void makeKpathseaTEXMFCNF() throws IOException,
-			TeXMFFileNotFoundException {
+	private void makeKpathseaTEXMFCNF() throws Exception {
 		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory()
 				+ "/texmf.cnf");
 		if (!texmfcnf_file.exists()) {
 			File texmfcnf_src = new File(environment.getTeXMFRootDirectory()
 					+ "/texmf/web2c/texmf.cnf");
-			if (!texmfcnf_src.exists())
+			if (!texmfcnf_src.exists()) {
 				throw new TeXMFFileNotFoundException("texmf.cnf", null);
+			}
 			BufferedReader reader = new BufferedReader(new FileReader(
 					texmfcnf_src));
 			FileWriter writer = new FileWriter(texmfcnf_file);

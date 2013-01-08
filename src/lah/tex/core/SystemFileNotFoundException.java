@@ -11,7 +11,7 @@ public class SystemFileNotFoundException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
-	String missing_system_file;
+	private final String missing_system_file;
 
 	public SystemFileNotFoundException(String file_name) {
 		missing_system_file = file_name;
@@ -20,6 +20,10 @@ public class SystemFileNotFoundException extends Exception {
 	@Override
 	public String getMessage() {
 		return "Missing system file " + missing_system_file;
+	}
+
+	public String getMissingSystemFile() {
+		return missing_system_file;
 	}
 
 }

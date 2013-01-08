@@ -41,8 +41,8 @@ class TeXMF extends AbstractTeXMF {
 
 	@Override
 	public ICompilationResult compile(IClient<ICompilationResult> client,
-			ICompilationCommand command) {
-		return getCompiler().compile(client, command);
+			ICompilationCommand command, long timeout) {
+		return getCompiler().compile(client, command, timeout);
 	}
 
 	private ICompiler getCompiler() {

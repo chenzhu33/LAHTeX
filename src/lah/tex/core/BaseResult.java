@@ -1,6 +1,6 @@
 package lah.tex.core;
 
-import lah.tex.interfaces.IResult;
+import lah.spectre.interfaces.IResult;
 
 public class BaseResult implements IResult {
 

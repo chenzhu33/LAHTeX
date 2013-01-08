@@ -1,5 +1,7 @@
 package lah.tex.interfaces;
 
+import lah.spectre.interfaces.IResult;
+
 public interface IInstallationResult extends IResult {
 
 	public static final int PACKAGE_PENDING = 0, PACKAGE_INSTALLING = 1,

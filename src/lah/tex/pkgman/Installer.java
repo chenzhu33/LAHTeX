@@ -123,8 +123,10 @@ public class Installer extends PkgManBase implements IInstaller {
 			client.onServerReady(result);
 
 		// copy xz, busybox, ... to private directory
-		if (package_names.length == 1 && package_names[0].equals("/"))
-			return installSystem(file_supplier);
+		if (package_names.length == 1 && package_names[0].startsWith("/")) {
+			return installSystemFile(package_names[0].substring(1),
+					file_supplier);
+		}
 
 		String[] pkgs_to_install;
 		try {
@@ -138,14 +140,14 @@ public class Installer extends PkgManBase implements IInstaller {
 		// FileRelocator relocator = new TDSFileLocator(texmf_root);
 		for (int i = 0; i < pkgs_to_install.length; i++) {
 			result.setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
+			// TODO Fix this: return on failure to install requested package
+			// only continue if some dependent package is missing
 			try {
 				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
 						.substring(0, pkgs_to_install[i].length() - 5) + ARCH
 						: pkgs_to_install[i])
 						+ PACKAGE_EXTENSION;
-
 				File pkg_file = file_supplier.getFile(pkf_file_name);
-
 				if (pkg_file == null) {
 					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 					continue;
@@ -169,6 +171,9 @@ public class Installer extends PkgManBase implements IInstaller {
 				} else {
 					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 				}
+			} catch (SystemFileNotFoundException e) {
+				result.setException(e);
+				return result;
 			} catch (Exception e) {
 				result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 			}
@@ -183,45 +188,49 @@ public class Installer extends PkgManBase implements IInstaller {
 		return result;
 	}
 
-	private IInstallationResult installSystem(IFileSupplier file_supplier) {
+	private IInstallationResult installSystemFile(String file_name,
+			IFileSupplier file_supplier) {
+		// String[] app_data_files = { "xz", "busybox", "desc", "depend",
+		// "index", "dbkeys" };
+		// String[] commands = { "cp", "ls", "tar", "chmod", "rm" };
 		InstallationResult result = new InstallationResult();
 		try {
-			String[] app_data_files = { "xz", "busybox", "desc", "depend",
-					"index", "dbkeys" };
-			for (String f : app_data_files) {
-				File df = file_supplier.getFile(f
-						+ (f.equals("xz") ? ".gz" : ".xz"));
+			// Create necessary symbolic links for system commands
+			if (file_name.equals("cp") || file_name.equals("ls")
+					|| file_name.equals("tar") || file_name.equals("chmod")
+					|| file_name.equals("rm")) {
+				File bin_dir = new File(environment.getTeXMFBinaryDirectory());
+				File cmdfile = new File(environment.getTeXMFBinaryDirectory()
+						+ "/" + file_name);
+				if (!cmdfile.exists()) {
+					shell.fork(new String[] { environment.getBusyBox(), "ln",
+							"-s", "busybox", file_name }, bin_dir);
+				}
+				cmdfile.setExecutable(true);
+			} else {
+				// Otherwise, the file is an app-data file which should be
+				// obtained remotely
+				File df = file_supplier.getFile(file_name
+						+ (file_name.equals("xz") ? ".gz" : ".xz"));
+
+				// unpack the *.xz files
 				if (df.getName().endsWith(".xz"))
 					df = xzdec(df);
-				// move to binary directory and set as executable
-				if (f.equals("xz") || f.equals("busybox")) {
+
+				if (file_name.equals("xz") || file_name.equals("busybox")) {
+					// Move binaries to the binary directory and set as
+					// executable
 					InputStream dfstr = new FileInputStream(df);
-					if (f.equals("xz"))
+					if (file_name.equals("xz"))
 						dfstr = new GZIPInputStream(dfstr);
 					File target = new File(
-							environment.getTeXMFBinaryDirectory() + "/" + f);
+							environment.getTeXMFBinaryDirectory() + "/"
+									+ file_name);
 					Streams.streamToFile(dfstr, target, true, false);
 					target.setExecutable(true);
 					df.delete();
 				}
 			}
-
-			// Create necessary symbolic links
-			File bin_dir = new File(environment.getTeXMFBinaryDirectory());
-			String[] commands = { "cp", "ls", "tar", "chmod", "rm" };
-			for (String cmd : commands) {
-				File cmdfile = new File(environment.getTeXMFBinaryDirectory()
-						+ "/" + cmd);
-				if (!cmdfile.exists()) {
-					shell.fork(new String[] { "ln", "-s", "busybox", cmd },
-							bin_dir);
-				}
-				cmdfile.setExecutable(true);
-			}
-
-			// Chmod all binary files
-			// shell.fork(new String[] { "chmod", "-R", "700", "." }, new File(
-			// environment.getTeXMFBinaryDirectory() + "/../../"));
 			return null;
 		} catch (Exception e) {
 			result.setException(e);
