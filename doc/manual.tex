@@ -1,0 +1,65 @@
+\documentclass{beamer}
+
+\usepackage{graphics}
+\usepackage{hyperref}
+\usepackage{tikz}
+
+\title{Project LAHTeX}
+\author{L.A.H.}
+
+\setbeamertemplate{enumerate item}{(\arabic{enumi})}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\begin{center}
+\scriptsize{This slide is compiled using \TeXPortal}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Introduction}
+LAHTeX is a project aiming to
+\begin{itemize}
+\item Provide a simple Java library interface to support management of TeX Live distribution
+\item Provide backend service to TeXPortal Android application
+\end{itemize}
+This project depends on Spectre project which provides utilities for \verb/Process/ management and streams processing.
+\end{frame}
+
+\begin{frame}[fragile]{Architecture}
+The expose interface includes:
+\begin{itemize}
+\item Operation handler interfaces \verb/IInstaller|ICompiler|ISeeker|ILoader)/ (in package \verb/lah.tex.interfaces/)
+\item Result interfaces I(Installation|Compilation|...)Result (also in package \verb/lah.tex.interfaces/)
+\item Delegator interface (abstract class) \verb/AbstractTeXMF/ to encapsulate all services of LAHTeX 
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Actuators}
+\begin{itemize}
+\item \verb/IInstaller/: this interface defines management services to caller
+\begin{itemize}
+\item Query the installed packages
+\item Install a new package
+\item Redo configuration such as enabling additional languages (for Babel package) and regenerate path database (ls-R files)
+\end{itemize}
+\item \verb/ICompiler/: this object creates external TeX processes to compile TeX documents. More than that, it performs analysis of the generated log to identify the problems such as missing packages. 
+\end{frame}
+
+\begin{frame}[fragile]{Returned results}
+Methods provided by LAHTeX have two characteristics: 
+\begin{enumerate}
+\item they should return instances of \verb/IResult/ which wraps a \verb/Exception/ raised during method execution;
+\item they should NOT raise exception (as a result).
+\end{enumerate}
+Extensions of \verb/IResult/ to contain result for a installation request or a compilation request are defined in the interfaces
+\begin{itemize}
+\item \verb/IInstallationResult/
+\item \verb/ICompilationResult/
+\item \verb/IPackageListRetrievalResult/
+\end{itemize}
+Client of LAHTeX should access information in the result using these interfaces.
+\end{frame}
+
+\end{document}

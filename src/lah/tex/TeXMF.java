@@ -48,7 +48,7 @@ class TeXMF extends AbstractTeXMF {
 	private ICompiler getCompiler() {
 		if (texmf_compiler == null)
 			texmf_compiler = new lah.tex.compile.Compiler(environment,
-					getSeeker());
+					getSeeker(), getInstaller());
 		return texmf_compiler;
 	}
 
@@ -86,6 +86,17 @@ class TeXMF extends AbstractTeXMF {
 	@Override
 	public IPackageListRetrievalResult loadPackageList() {
 		return getLoader().loadPackageList();
+	}
+
+	@Override
+	public void makeLanguageConfiguration(String[] languages,
+			boolean[] enable_languages) throws Exception {
+		getInstaller().makeLanguageConfiguration(languages, enable_languages);
+	}
+
+	@Override
+	public void makeLSR(String[] files) throws Exception {
+		getInstaller().makeLSR(files);
 	}
 
 	@Override

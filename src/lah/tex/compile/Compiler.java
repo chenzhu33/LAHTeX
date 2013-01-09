@@ -2,7 +2,6 @@ package lah.tex.compile;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Map;
@@ -13,8 +12,6 @@ import lah.spectre.CommandLineArguments;
 import lah.spectre.interfaces.IClient;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
-import lah.spectre.stream.StreamRedirector;
-import lah.spectre.stream.Streams;
 import lah.tex.core.BaseResult;
 import lah.tex.core.KpathseaException;
 import lah.tex.core.TeXMFFileNotFoundException;
@@ -22,6 +19,7 @@ import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 import lah.tex.interfaces.ICompiler;
 import lah.tex.interfaces.IEnvironment;
+import lah.tex.interfaces.IInstaller;
 import lah.tex.interfaces.ISeeker;
 
 public class Compiler implements ICompiler {
@@ -31,8 +29,6 @@ public class Compiler implements ICompiler {
 	 */
 	private static final int compilation_timeout = 600000;
 
-	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
-
 	private static final int make_fmt_timeout = 120000;
 
 	private static final int make_font_tfm_timeout = 120000;
@@ -41,22 +37,23 @@ public class Compiler implements ICompiler {
 
 	private IEnvironment environment;
 
+	private IInstaller installer;
+
 	private final TeXMFOutputAnalyzer output_analyzer;
 
 	private ISeeker seeker;
 
 	private TimedShell shell;
 
-	private final String texmf_language_config;
-
 	private final String texmf_var;
 
-	public Compiler(IEnvironment environment, ISeeker seeker) {
+	public Compiler(IEnvironment environment, ISeeker seeker,
+			IInstaller installer) {
 		this.environment = environment;
 		this.seeker = seeker;
+		this.installer = installer;
 		shell = new TimedShell();
 		texmf_var = environment.getTeXMFRootDirectory() + "/texmf-var";
-		texmf_language_config = texmf_var + "/tex/generic/config";
 		output_analyzer = new TeXMFOutputAnalyzer();
 	}
 
@@ -97,7 +94,7 @@ public class Compiler implements ICompiler {
 		while (true) {
 			try {
 				if (mklsr_pre)
-					makeLSR();
+					installer.makeLSR(null);
 				cmd[0] = getTeXMFProgram(cmd[0]);
 				output_analyzer.setClient(client);
 				shell.fork(cmd, dir, output_analyzer, timeout);
@@ -106,7 +103,7 @@ public class Compiler implements ICompiler {
 					// Regenerate path database again for generated files dumps
 					// to be found; this might be inefficient but it is safe ;
 					// 'ls -R' is cheap anyway
-					makeLSR();
+					installer.makeLSR(null);
 				}
 			} catch (Exception e) {
 				result = output_analyzer.getTeXMFResult();
@@ -262,9 +259,9 @@ public class Compiler implements ICompiler {
 			if (name != null && engine != null) {
 				// Prepare the language files if they do not exist
 				// Regenerate path database to make sure that necessary input
-				// files
-				// to make memory dumps (*.ini, *.mf, *.tex, ...) are found
-				makeLanguageConfigs();
+				// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
+				// found
+				installer.makeLanguageConfiguration(null, null);
 				// makeLSR();
 
 				// Location of the memory dump file
@@ -316,99 +313,6 @@ public class Compiler implements ICompiler {
 		}
 	}
 
-	/**
-	 * Write out language configurations
-	 * 
-	 * Writing language.dat to /texmf-var/tex/generic/config/language.dat
-	 * Writing language.def to /texmf-var/tex/generic/config/language.def
-	 * writing language.dat.lua to
-	 * /texmf-var/tex/generic/config/language.dat.lua
-	 * 
-	 * @throws Exception
-	 */
-	private void makeLanguageConfigs() throws Exception {
-
-		// language_configs[i] is a String array whose first element is the name
-		// of the configuration file and the remaining is its content to write
-		// to.
-		String[][] language_configs = {
-				{
-						"language.dat",
-						"english		hyphen.tex  % do not change!",
-						"=usenglish",
-						"=USenglish",
-						"=american",
-						"dumylang	dumyhyph.tex    %for testing a new language.",
-						"nohyphenation	zerohyph.tex    %a language with no patterns at all." },
-				{
-						"language.def",
-						"%% e-TeX V2.0;2",
-						"\\addlanguage {USenglish}{hyphen}{}{2}{3} %%% This MUST be the first non-comment line of the file",
-						"\\uselanguage {USenglish}             %%% This MUST be the last line of the file." }
-
-		};
-		new File(texmf_language_config).mkdirs();
-		boolean is_modified = false;
-		for (int i = 0; i < language_configs.length; i++) {
-			if (!new File(texmf_language_config + "/" + language_configs[i][0])
-					.exists()) {
-				FileWriter fwr = new FileWriter(new File(texmf_language_config
-						+ "/" + language_configs[i][0]));
-				for (int j = 1; j < language_configs[i].length; j++)
-					fwr.write(language_configs[i][j] + "\n");
-				fwr.close();
-				is_modified = true;
-			}
-		}
-		if (is_modified)
-			makeLSR();
-	}
-
-	/**
-	 * Generate the path database files (ls-R) in all TeX directory trees
-	 * (texmf*)
-	 * 
-	 * @throws Exception
-	 */
-	private void makeLSR() throws Exception {
-		// The directories under tex_root to generate ls-R are:
-		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var",
-				"texmf-config" };
-
-		for (int i = 0; i < texmfdir_names.length; i++) {
-			File texmf_dir = new File(environment.getTeXMFRootDirectory() + "/"
-					+ texmfdir_names[i]);
-
-			// Skip non-existing texmf directory, is not a directory or
-			// cannot
-			// read/write/execute: skip it
-			if (!texmf_dir.exists()
-					|| (!(texmf_dir.isDirectory() && texmf_dir.canRead()
-							&& texmf_dir.canWrite() && texmf_dir.canExecute())))
-				continue;
-
-			// Delete the ls-R before doing path generation
-			File lsRfile = new File(texmf_dir + "/ls-R");
-			if (lsRfile.exists() && lsRfile.isFile()) {
-				// System.out.println("Delete " + lsRfile.getAbsolutePath());
-				lsRfile.delete();
-			}
-
-			// Create a temporary ls-R file
-			File temp_lsRfile = new File(environment.getTeXMFRootDirectory()
-					+ "/ls-R");
-			Streams.writeStringToFile(lsR_magic, temp_lsRfile, false);
-			// Now do the "ls -R . >> ls-R" in the texmf root directory
-			final FileOutputStream stream = new FileOutputStream(temp_lsRfile,
-					true);
-			shell.fork(new String[] { environment.getLS(), "-R", "." },
-					texmf_dir, new StreamRedirector(stream), 600000);
-			stream.close();
-			// Move the temporary file to the intended location
-			temp_lsRfile.renameTo(lsRfile);
-		}
-	}
-
 	private IResult makeMF(String name) {
 		Pattern rootname_pointsize_pattern = Pattern
 				.compile("([a-z]+)([0-9]+)");
@@ -457,7 +361,7 @@ public class Compiler implements ICompiler {
 			FileWriter mfoutput = new FileWriter(fontdir + name + ".mf");
 			mfoutput.write(mf_content[match]);
 			mfoutput.close();
-			makeLSR();
+			installer.makeLSR(null);
 			return null;
 		} catch (Exception e) {
 			return new BaseResult(e);

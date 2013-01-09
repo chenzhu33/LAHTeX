@@ -3,6 +3,8 @@ package lah.tex.pkgman;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.zip.GZIPInputStream;
 import lah.spectre.interfaces.IClient;
 import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.process.TimedShell;
+import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
 import lah.tex.core.SystemFileNotFoundException;
 import lah.tex.interfaces.IEnvironment;
@@ -27,6 +30,8 @@ import lah.tex.interfaces.IInstaller;
 public class Installer extends PkgManBase implements IInstaller {
 
 	private static final String ARCH = "arm-android";
+
+	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
 
 	public static final String PACKAGE_EXTENSION = ".tar.xz";
 
@@ -178,9 +183,10 @@ public class Installer extends PkgManBase implements IInstaller {
 				result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 			}
 		}
-		// post download, extract
+		// post download and extract packages
 		try {
-			relocate();
+			relocate(); // relocate the files to the TeX directory structures
+			makeLSR(null); // and also regenerate ls-R files
 			result.setState(IInstallationResult.STATE_INSTALLATION_FINISH);
 		} catch (Exception e) {
 			result.setException(e);
@@ -247,6 +253,104 @@ public class Installer extends PkgManBase implements IInstaller {
 			String p = matcher.group(1);
 			String[] ds = single_space_pattern.split(matcher.group(2));
 			depend.put(p, ds);
+		}
+	}
+
+	/**
+	 * Write out language configurations
+	 * 
+	 * Writing language.dat to /texmf-var/tex/generic/config/language.dat
+	 * Writing language.def to /texmf-var/tex/generic/config/language.def
+	 * writing language.dat.lua to
+	 * /texmf-var/tex/generic/config/language.dat.lua
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public void makeLanguageConfiguration(String[] languages,
+			boolean[] enable_languages) throws Exception {
+		final String texmf_language_config = environment
+				.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
+		// language_configs[i] is a String array whose first element is the name
+		// of the configuration file and the remaining is its content to write
+		// to.
+		String[][] language_configs = {
+				{
+						"language.dat",
+						"english		hyphen.tex  % do not change!",
+						"=usenglish",
+						"=USenglish",
+						"=american",
+						"dumylang	dumyhyph.tex    %for testing a new language.",
+						"nohyphenation	zerohyph.tex    %a language with no patterns at all." },
+				{
+						"language.def",
+						"%% e-TeX V2.0;2",
+						"\\addlanguage {USenglish}{hyphen}{}{2}{3} %%% This MUST be the first non-comment line of the file",
+						"\\uselanguage {USenglish}             %%% This MUST be the last line of the file." }
+
+		};
+		new File(texmf_language_config).mkdirs();
+		boolean is_modified = false;
+		for (int i = 0; i < language_configs.length; i++) {
+			if (!new File(texmf_language_config + "/" + language_configs[i][0])
+					.exists()) {
+				FileWriter fwr = new FileWriter(new File(texmf_language_config
+						+ "/" + language_configs[i][0]));
+				for (int j = 1; j < language_configs[i].length; j++)
+					fwr.write(language_configs[i][j] + "\n");
+				fwr.close();
+				is_modified = true;
+			}
+		}
+		if (is_modified)
+			makeLSR(null);
+	}
+
+	/**
+	 * Generate the path database files (ls-R) in all TeX directory trees
+	 * (texmf*)
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public void makeLSR(String[] files) throws Exception {
+		// The directories under tex_root to generate ls-R are:
+		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var",
+				"texmf-config" };
+
+		for (int i = 0; i < texmfdir_names.length; i++) {
+			File texmf_dir = new File(environment.getTeXMFRootDirectory() + "/"
+					+ texmfdir_names[i]);
+
+			// Skip non-existing texmf directory, is not a directory or
+			// cannot read/write/execute: skip it
+			if (!texmf_dir.exists()
+					|| (!(texmf_dir.isDirectory() && texmf_dir.canRead()
+							&& texmf_dir.canWrite() && texmf_dir.canExecute())))
+				continue;
+
+			// Delete the ls-R before doing path generation
+			File lsRfile = new File(texmf_dir + "/ls-R");
+			if (lsRfile.exists() && lsRfile.isFile()) {
+				// System.out.println("Delete " + lsRfile.getAbsolutePath());
+				lsRfile.delete();
+			}
+
+			// Create a temporary ls-R file
+			File temp_lsRfile = new File(environment.getTeXMFRootDirectory()
+					+ "/ls-R");
+			Streams.writeStringToFile(lsR_magic, temp_lsRfile, false);
+
+			// Now do the "ls -R . >> ls-R" in the texmf root directory
+			final FileOutputStream stream = new FileOutputStream(temp_lsRfile,
+					true);
+			shell.fork(new String[] { environment.getLS(), "-R", "." },
+					texmf_dir, new StreamRedirector(stream), 600000);
+			stream.close();
+
+			// Move the temporary file to the intended location
+			temp_lsRfile.renameTo(lsRfile);
 		}
 	}
 

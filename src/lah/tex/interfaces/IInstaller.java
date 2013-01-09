@@ -13,4 +13,9 @@ public interface IInstaller {
 			IFileSupplier package_supplier, String[] package_names,
 			boolean ignore_installed);
 
+	void makeLanguageConfiguration(String[] languages,
+			boolean[] enable_languages) throws Exception;
+
+	void makeLSR(String[] files) throws Exception;
+
 }
