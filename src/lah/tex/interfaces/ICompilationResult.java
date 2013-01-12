@@ -21,6 +21,4 @@ public interface ICompilationResult extends IResult {
 
 	String getOutputFileType();
 
-	int getState();
-
 }

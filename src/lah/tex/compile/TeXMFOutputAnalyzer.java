@@ -22,7 +22,7 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 
 	private IClient<ICompilationResult> client;
 
-	private String default_file_extension = "tex";
+	String default_file_extension = "tex";
 
 	private final Matcher kpathsea_matcher = Pattern.compile(
 			"kpathsea: Running (.+)\\s*").matcher("");
@@ -72,6 +72,9 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 
 	@Override
 	public void processBuffer(byte[] buffer, int count) throws Exception {
+		// reset if there is no result available
+		if (texmf_result == null)
+			reset();
 		output_buffer.append(new String(buffer, 0, count));
 		single_line_matcher.reset(output_buffer);
 		String line;

@@ -14,11 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>Spectre</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Spectre/src</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>

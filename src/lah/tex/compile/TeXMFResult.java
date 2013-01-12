@@ -105,8 +105,8 @@ class TeXMFResult extends BaseResult implements ICompilationResult {
 	}
 
 	@Override
-	public int getState() {
-		return state;
+	public boolean isComplete() {
+		return state == STATE_COMPLETE;
 	}
 
 	void setCompilationCommand(ICompilationCommand cmd) {

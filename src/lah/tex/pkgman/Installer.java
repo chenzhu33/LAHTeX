@@ -316,8 +316,7 @@ public class Installer extends PkgManBase implements IInstaller {
 	@Override
 	public void makeLSR(String[] files) throws Exception {
 		// The directories under tex_root to generate ls-R are:
-		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var",
-				"texmf-config" };
+		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var" };
 
 		for (int i = 0; i < texmfdir_names.length; i++) {
 			File texmf_dir = new File(environment.getTeXMFRootDirectory() + "/"

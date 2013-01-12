@@ -29,11 +29,8 @@ public class Compiler implements ICompiler {
 	 */
 	private static final int compilation_timeout = 600000;
 
-	private static final int make_fmt_timeout = 120000;
-
-	private static final int make_font_tfm_timeout = 120000;
-
-	private static final int make_pk_font_timeout = make_font_tfm_timeout;
+	static final Pattern format_pattern = Pattern
+			.compile("([a-z]*)\\.(fmt|base|mem)");
 
 	private IEnvironment environment;
 
@@ -79,32 +76,36 @@ public class Compiler implements ICompiler {
 	@Override
 	public ICompilationResult compile(IClient<ICompilationResult> client,
 			ICompilationCommand cmd, long timeout) {
-		String[] command = cmd.getCommand();
 		output_analyzer.setDefaultFileExtension("tex");
-		TeXMFResult result = executeTeXMF(client, command, cmd.getDirectory(),
-				timeout == 0 ? compilation_timeout : timeout, true, false);
-		result.setCompilationCommand(cmd);
+		output_analyzer.setClient(client); // set the client to report to
+		TeXMFResult result = executeTeXMF(cmd.getCommand(), cmd.getDirectory(),
+				timeout <= 0 ? compilation_timeout : timeout);
+		result.setCompilationCommand(cmd); // pass the command to get result
+		output_analyzer.setClient(null);
 		return result;
 	}
 
-	private synchronized TeXMFResult executeTeXMF(
-			IClient<ICompilationResult> client, String[] cmd, File dir,
-			long timeout, boolean mklsr_pre, boolean mklsr_post) {
+	/**
+	 * Execute TeX or MF or a distributed command, resolve Kpathsea problems and
+	 * retry the operation as necessary
+	 * 
+	 * @param cmd
+	 *            The command to execute
+	 * @param dir
+	 *            The directory to execute command at
+	 * @param timeout
+	 *            Time allowance for command execution
+	 * @return
+	 */
+	private synchronized TeXMFResult executeTeXMF(String[] cmd, File dir,
+			long timeout) {
 		TeXMFResult result;
 		while (true) {
 			try {
-				if (mklsr_pre)
-					installer.makeLSR(null);
 				cmd[0] = getTeXMFProgram(cmd[0]);
-				output_analyzer.setClient(client);
+				output_analyzer.reset(); // generate a new result
 				shell.fork(cmd, dir, output_analyzer, timeout);
 				result = output_analyzer.getTeXMFResult();
-				if (!result.hasException() && mklsr_post) {
-					// Regenerate path database again for generated files dumps
-					// to be found; this might be inefficient but it is safe ;
-					// 'ls -R' is cheap anyway
-					installer.makeLSR(null);
-				}
 			} catch (Exception e) {
 				result = output_analyzer.getTeXMFResult();
 				if (result == null)
@@ -115,8 +116,8 @@ public class Compiler implements ICompiler {
 
 			postProcessResult(result);
 
-			// resolve KpathseaException that does not require install new
-			// package
+			// resolve KpathseaException that does not require installation
+			// of new packages
 			if (result.hasException()
 					&& result.getException() instanceof KpathseaException
 					&& ((KpathseaException) result.getException())
@@ -135,8 +136,30 @@ public class Compiler implements ICompiler {
 		return result;
 	}
 
-	private TeXMFResult executeTeXMF(String[] cmd, File dir, long timeout) {
-		return executeTeXMF(null, cmd, dir, timeout, true, true);
+	/**
+	 * Execute internal commands to generate formats, fonts, ...
+	 * 
+	 * @param cmd
+	 * @param dir
+	 * @param timeout
+	 * @return
+	 */
+	private TeXMFResult executeTeXMF(String[] cmd, File dir, String default_ext) {
+		// Execute the command and restore extension
+		final String old_default_ext = output_analyzer.default_file_extension;
+		output_analyzer.setDefaultFileExtension(default_ext);
+		TeXMFResult result = executeTeXMF(cmd, dir, compilation_timeout);
+		output_analyzer.setDefaultFileExtension(old_default_ext);
+
+		// Regenerate path database again for generated files to be found
+		if (result != null && !result.hasException()) {
+			try {
+				installer.makeLSR(null);
+			} catch (Exception e) {
+				result.setException(e);
+			}
+		}
+		return result;
 	}
 
 	private String getRealSize(int pointsize) {
@@ -181,10 +204,10 @@ public class Compiler implements ICompiler {
 			makeKpathseaTEXMFCNF();
 			return program_file.getAbsolutePath();
 		} else {
-			TeXMFFileNotFoundException exc = new TeXMFFileNotFoundException(
+			TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
 					program_file.getName(), null);
-			exc.identifyMissingPackage(seeker);
-			throw exc;
+			e.identifyMissingPackage(seeker);
+			throw e;
 		}
 	}
 
@@ -226,66 +249,66 @@ public class Compiler implements ICompiler {
 	/**
 	 * Make a format file
 	 * 
-	 * @param output_analyzer
-	 * 
-	 * @param tex_fmt
-	 * @return
-	 * @throws Exception
+	 * @param format
+	 *            Name of a format file (must be *.fmt for TeX format, *.base
+	 *            for MetaFont format, *.mem for MetaPost format)
+	 * @return IResult
 	 */
-	private IResult makeFMT(String format, TeXMFOutputAnalyzer output_analyzer) {
-		String name = null;
-		String engine = null;
-		String program;
-		String default_ext = null;
-		String[] options = null;
-		try {
-			if (format.endsWith(".fmt")) {
-				name = format.substring(0, format.length() - 4);
-				engine = (format.startsWith("pdf") ? "pdftex" : "tex");
-				program = engine;
-				default_ext = "tex";
-				options = (format.startsWith("pdf") ? new String[] { "-etex" }
-						: null);
-			} else if (format.endsWith(".base")) {
-				name = format.substring(0, format.length() - 5);
-				engine = "metafont";
-				program = "mf";
-				default_ext = "mf";
-				options = null;
-			} else {
-				program = "mpost";
-			}
-
-			if (name != null && engine != null) {
-				// Prepare the language files if they do not exist
-				// Regenerate path database to make sure that necessary input
-				// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
-				// found
-				installer.makeLanguageConfiguration(null, null);
-				// makeLSR();
-
-				// Location of the memory dump file
-				File fmt_loc = new File(texmf_var + "/web2c/" + engine);
-				if (!fmt_loc.exists())
-					fmt_loc.mkdirs();
-
-				// Now create and run the process to generate the format file
-				String[] cmd = new String[(options == null ? 0 : options.length) + 4];
-				cmd[0] = program;
-				cmd[1] = "-ini";
-				cmd[2] = "-interaction=nonstopmode";
-				if (options != null)
-					System.arraycopy(options, 0, cmd, 3, options.length);
-				cmd[cmd.length - 1] = name + ".ini"; // the *.ini input file
-
-				output_analyzer.setDefaultFileExtension(default_ext);
-				return executeTeXMF(cmd, fmt_loc, make_fmt_timeout);
-			}
+	private IResult makeFMT(String format) {
+		Matcher format_matcher = format_pattern.matcher(format);
+		if (!format_matcher.find())
 			return null;
+
+		String name = format_matcher.group(1);
+		String type = format_matcher.group(2);
+		String engine;
+		String program;
+		String default_ext;
+		String[] options = null;
+
+		if (type.equals("fmt")) {
+			engine = program = (format.startsWith("pdf") ? "pdftex" : "tex");
+			default_ext = "tex";
+			if (format.startsWith("pdf"))
+				options = new String[] { "-etex" };
+		} else if (type.equals("base")) {
+			engine = "metafont";
+			program = default_ext = "mf";
+			options = null;
+		} else { // type == "mem";
+			engine = "metapost";
+			program = "mpost";
+			default_ext = "mp";
+		}
+
+		if (name == null || engine == null)
+			return null;
+
+		// Prepare the language files if they do not exist
+		// Regenerate path database to make sure that necessary input
+		// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
+		// found
+		try {
+			installer.makeLanguageConfiguration(null, null);
 		} catch (Exception e) {
-			// e.printStackTrace(System.out);
 			return new BaseResult(e);
 		}
+
+		// Location of the memory dump file
+		File fmt_loc = new File(texmf_var + "/web2c/" + engine);
+		if (!fmt_loc.exists())
+			fmt_loc.mkdirs();
+
+		// Now create and run the process to generate the format file
+		String[] cmd = new String[(options == null ? 0 : options.length) + 4];
+		cmd[0] = program;
+		cmd[1] = "-ini";
+		cmd[2] = "-interaction=nonstopmode";
+		if (options != null)
+			System.arraycopy(options, 0, cmd, 3, options.length);
+		cmd[cmd.length - 1] = name + ".ini"; // the *.ini input file
+
+		return executeTeXMF(cmd, fmt_loc, default_ext);
 	}
 
 	private void makeKpathseaTEXMFCNF() throws Exception {
@@ -372,11 +395,10 @@ public class Compiler implements ICompiler {
 	 * Make PK font using arguments from a command line
 	 * 
 	 * @param cmd
-	 * @param output_analyzer
 	 * @return
 	 * @throws Exception
 	 */
-	private IResult makePK(String cmd, TeXMFOutputAnalyzer output_analyzer) {
+	private IResult makePK(String cmd) {
 		String[] args = cmd.split("\\s+");
 		Map<String, String> arg_map = CommandLineArguments
 				.parseCommandLineArguments(args);
@@ -398,26 +420,25 @@ public class Compiler implements ICompiler {
 				+ dpi);
 		pk_loc.mkdirs();
 		IResult mfresult = executeTeXMF(new String[] { "mf", arg }, pk_loc,
-				make_pk_font_timeout);
+				"mf");
 		if (mfresult != null && mfresult.hasException())
 			return mfresult;
 		else
 			return executeTeXMF(new String[] { "gftopk", gf_name, pk_name },
-					pk_loc, make_pk_font_timeout);
+					pk_loc, null);
 	}
 
 	/**
 	 * Generate the necessary TeX Font Metric (TFM) files
 	 */
-	private IResult makeTFM(String name, TeXMFOutputAnalyzer output_analyzer) {
+	private IResult makeTFM(String name) {
 		int mag = 1;
 		String mfmode = "ljfour";
 		String arg = "\\mode:=" + mfmode + "; \\mag:=" + mag
 				+ "; nonstopmode; input " + name;
 		File tfm_loc = new File(texmf_var + "/fonts/tfm/");
 		tfm_loc.mkdirs();
-		return executeTeXMF(new String[] { "mf", arg }, tfm_loc,
-				make_font_tfm_timeout);
+		return executeTeXMF(new String[] { "mf", arg }, tfm_loc, "mf");
 	}
 
 	private void postProcessResult(IResult result) {
@@ -435,19 +456,15 @@ public class Compiler implements ICompiler {
 	private IResult runKpathsea(String kpsecmd) {
 		// System.out.println("Execute Kpathsea command >> " + kpsecmd);
 		if (kpsecmd.startsWith("mktexfmt"))
-			return makeFMT(kpsecmd.substring("mktexfmt".length()).trim(),
-					output_analyzer);
+			return makeFMT(kpsecmd.substring("mktexfmt".length()).trim());
 		else if (kpsecmd.startsWith("mktexpk"))
-			return makePK(kpsecmd, output_analyzer);
+			return makePK(kpsecmd);
 		else if (kpsecmd.startsWith("mktextfm"))
-			return makeTFM(kpsecmd.substring("mktextfm".length()).trim(),
-					output_analyzer);
+			return makeTFM(kpsecmd.substring("mktextfm".length()).trim());
 		else if (kpsecmd.startsWith("mktexmf"))
 			return makeMF(kpsecmd.substring("mktexmf".length()).trim());
-		else {
-			// System.out.println("Invalid command!");
-			return null;
-		}
+		else
+			return null; // should it be a new BaseResult
 	}
 
 }
