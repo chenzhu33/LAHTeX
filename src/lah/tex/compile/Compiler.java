@@ -22,24 +22,66 @@ import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstaller;
 import lah.tex.interfaces.ISeeker;
 
+/**
+ * This class handles the actual execution of TeX programs, analyzes the
+ * standard outputs to give suggestions and to fix issues automatically.
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class Compiler implements ICompiler {
 
 	/**
-	 * Time out for compilation; set to 600000 milisec (i.e. 10 minutes)
+	 * Default time out for compilation; set to 600000 milisec (i.e. 10 minutes)
 	 */
-	private static final int compilation_timeout = 600000;
+	private static final int default_compilation_timeout = 600000;
 
+	/**
+	 * Pattern for TeX, MetaFont or MetaPost memory dump file
+	 */
 	static final Pattern format_pattern = Pattern
 			.compile("([a-z]*)\\.(fmt|base|mem)");
 
+	/**
+	 * Pattern for MetaFont sources
+	 */
+	private static final Pattern[] mf_font_name_patterns = new Pattern[] {
+			Pattern.compile("(ec|tc).*"),
+			Pattern.compile("dc.*"),
+			Pattern.compile("(cs|lcsss|icscsc|icstt|ilcsss).*"),
+			Pattern.compile("(wn[bcdfirstuv]|rx[bcdfiorstuvx][bcfhilmostx]|l[abcdhl][bcdfiorstuvx]).*"),
+			Pattern.compile("g[lmorst][bijmtwx][cilnoru].*"),
+			Pattern.compile(".*") };
+
+	/**
+	 * Pattern for a MetaFont font name
+	 */
+	private static final Pattern mf_font_rootname_pointsize_pattern = Pattern
+			.compile("([a-z]+)([0-9]+)");
+
+	/**
+	 * System/installation specific environment
+	 */
 	private IEnvironment environment;
 
+	/**
+	 * Installer to update the environment
+	 */
 	private IInstaller installer;
 
+	/**
+	 * TeX and MetaFont standard output analyzer
+	 */
 	private final TeXMFOutputAnalyzer output_analyzer;
 
+	/**
+	 * Seeker to identify the missing package
+	 */
 	private ISeeker seeker;
 
+	/**
+	 * Shell for execute tex commands
+	 */
 	private TimedShell shell;
 
 	private final String texmf_var;
@@ -79,10 +121,31 @@ public class Compiler implements ICompiler {
 		output_analyzer.setDefaultFileExtension("tex");
 		output_analyzer.setClient(client); // set the client to report to
 		TeXMFResult result = executeTeXMF(cmd.getCommand(), cmd.getDirectory(),
-				timeout <= 0 ? compilation_timeout : timeout);
+				timeout <= 0 ? default_compilation_timeout : timeout);
 		result.setCompilationCommand(cmd); // pass the command to get result
 		output_analyzer.setClient(null);
 		return result;
+	}
+
+	/**
+	 * Execute the translated method which corresponds to a mktex(fmt|mf|pk|tfm)
+	 * script in Kpathsea package
+	 * 
+	 * @param command
+	 *            The command to execute
+	 * @return
+	 */
+	private IResult executeKpathseaScript(String command) {
+		if (command.startsWith("mktexfmt"))
+			return makeFMT(command.substring("mktexfmt".length()).trim());
+		else if (command.startsWith("mktexpk"))
+			return makePK(command);
+		else if (command.startsWith("mktextfm"))
+			return makeTFM(command.substring("mktextfm".length()).trim());
+		else if (command.startsWith("mktexmf"))
+			return makeMF(command.substring("mktexmf".length()).trim());
+		else
+			return null; // should it be a new BaseResult
 	}
 
 	/**
@@ -122,7 +185,7 @@ public class Compiler implements ICompiler {
 					&& result.getException() instanceof KpathseaException
 					&& ((KpathseaException) result.getException())
 							.getMissingPackage() == null) {
-				IResult temp_result = runKpathsea(((KpathseaException) result
+				IResult temp_result = executeKpathseaScript(((KpathseaException) result
 						.getException()).getCommand());
 				if (temp_result != null && temp_result.hasException()) {
 					result.setException(temp_result.getException());
@@ -148,7 +211,7 @@ public class Compiler implements ICompiler {
 		// Execute the command and restore extension
 		final String old_default_ext = output_analyzer.default_file_extension;
 		output_analyzer.setDefaultFileExtension(default_ext);
-		TeXMFResult result = executeTeXMF(cmd, dir, compilation_timeout);
+		TeXMFResult result = executeTeXMF(cmd, dir, default_compilation_timeout);
 		output_analyzer.setDefaultFileExtension(old_default_ext);
 
 		// Regenerate path database again for generated files to be found
@@ -201,7 +264,7 @@ public class Compiler implements ICompiler {
 				: new File(environment.getTeXMFBinaryDirectory() + "/"
 						+ program);
 		if (program_file.exists()) {
-			makeKpathseaTEXMFCNF();
+			makeTEXMFCNF();
 			return program_file.getAbsolutePath();
 		} else {
 			TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
@@ -247,11 +310,11 @@ public class Compiler implements ICompiler {
 	}
 
 	/**
-	 * Make a format file
+	 * Make a memory dump file (i.e. a format file)
 	 * 
 	 * @param format
-	 *            Name of a format file (must be *.fmt for TeX format, *.base
-	 *            for MetaFont format, *.mem for MetaPost format)
+	 *            Name of a format file (must be of form *.fmt for TeX format,
+	 *            *.base for MetaFont format, *.mem for MetaPost format)
 	 * @return IResult
 	 */
 	private IResult makeFMT(String format) {
@@ -311,35 +374,8 @@ public class Compiler implements ICompiler {
 		return executeTeXMF(cmd, fmt_loc, default_ext);
 	}
 
-	private void makeKpathseaTEXMFCNF() throws Exception {
-		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory()
-				+ "/texmf.cnf");
-		if (!texmfcnf_file.exists()) {
-			File texmfcnf_src = new File(environment.getTeXMFRootDirectory()
-					+ "/texmf/web2c/texmf.cnf");
-			if (!texmfcnf_src.exists()) {
-				throw new TeXMFFileNotFoundException("texmf.cnf", null);
-			}
-			BufferedReader reader = new BufferedReader(new FileReader(
-					texmfcnf_src));
-			FileWriter writer = new FileWriter(texmfcnf_file);
-			String line;
-			while ((line = reader.readLine()) != null) {
-				if (line.startsWith("TEXMFROOT"))
-					writer.write("TEXMFROOT = "
-							+ environment.getTeXMFRootDirectory() + "\n");
-				else
-					writer.write(line + "\n");
-			}
-			reader.close();
-			writer.close();
-		}
-	}
-
 	private IResult makeMF(String name) {
-		Pattern rootname_pointsize_pattern = Pattern
-				.compile("([a-z]+)([0-9]+)");
-		Matcher rootname_pointsize_matcher = rootname_pointsize_pattern
+		Matcher rootname_pointsize_matcher = mf_font_rootname_pointsize_pattern
 				.matcher(name);
 		String realsize, rootname;
 		if (rootname_pointsize_matcher.matches()) {
@@ -356,13 +392,8 @@ public class Compiler implements ICompiler {
 			// Invalid name pattern
 			return new BaseResult(new Exception(
 					"Invalid font name pattern in mktexmf"));
-		Pattern[] name_patterns = new Pattern[] {
-				Pattern.compile("(ec|tc).*"),
-				Pattern.compile("dc.*"),
-				Pattern.compile("(cs|lcsss|icscsc|icstt|ilcsss).*"),
-				Pattern.compile("(wn[bcdfirstuv]|rx[bcdfiorstuvx][bcfhilmostx]|l[abcdhl][bcdfiorstuvx]).*"),
-				Pattern.compile("g[lmorst][bijmtwx][cilnoru].*"),
-				Pattern.compile(".*") };
+
+		// The content of MF source for the font name matching the pattern
 		String[] mf_content = new String[] {
 				"if unknown exbase: input exbase fi;" + "gensize:=" + realsize
 						+ ";" + "generate " + rootname + ";",
@@ -371,19 +402,22 @@ public class Compiler implements ICompiler {
 				"input cscode; use_driver;", "input fikparm;",
 				"input cbgreek;",
 				"design_size := " + realsize + ";" + "input " + rootname + ";" };
-		// Find the matching pattern
+
+		// Find the pattern that matches the font name
 		int match = 0;
-		for (; match < name_patterns.length; match++) {
-			if (name_patterns[match].matcher(name).matches())
+		for (; match < mf_font_name_patterns.length; match++) {
+			if (mf_font_name_patterns[match].matcher(name).matches())
 				break;
 		}
-		// Write the file
+
+		// Generate the MF file
 		try {
-			String fontdir = texmf_var + "/fonts/source/";
-			new File(fontdir).mkdirs();
-			FileWriter mfoutput = new FileWriter(fontdir + name + ".mf");
-			mfoutput.write(mf_content[match]);
-			mfoutput.close();
+			String mf_font_directory = texmf_var + "/fonts/source/";
+			new File(mf_font_directory).mkdirs();
+			FileWriter mf_output = new FileWriter(mf_font_directory + name
+					+ ".mf");
+			mf_output.write(mf_content[match]);
+			mf_output.close();
 			installer.makeLSR(null);
 			return null;
 		} catch (Exception e) {
@@ -429,9 +463,40 @@ public class Compiler implements ICompiler {
 	}
 
 	/**
+	 * Generate configuration file texmf.cnf in the TeX binary directory
+	 * reflecting the installation
+	 * 
+	 * @throws Exception
+	 */
+	private void makeTEXMFCNF() throws Exception {
+		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory()
+				+ "/texmf.cnf");
+		if (!texmfcnf_file.exists()) {
+			File texmfcnf_src = new File(environment.getTeXMFRootDirectory()
+					+ "/texmf/web2c/texmf.cnf");
+			if (!texmfcnf_src.exists()) {
+				throw new TeXMFFileNotFoundException("texmf.cnf", null);
+			}
+			BufferedReader reader = new BufferedReader(new FileReader(
+					texmfcnf_src));
+			FileWriter writer = new FileWriter(texmfcnf_file);
+			String line;
+			while ((line = reader.readLine()) != null) {
+				if (line.startsWith("TEXMFROOT"))
+					writer.write("TEXMFROOT = "
+							+ environment.getTeXMFRootDirectory() + "\n");
+				else
+					writer.write(line + "\n");
+			}
+			reader.close();
+			writer.close();
+		}
+	}
+
+	/**
 	 * Generate the necessary TeX Font Metric (TFM) files
 	 */
-	private IResult makeTFM(String name) {
+	private TeXMFResult makeTFM(String name) {
 		int mag = 1;
 		String mfmode = "ljfour";
 		String arg = "\\mode:=" + mfmode + "; \\mag:=" + mag
@@ -441,6 +506,12 @@ public class Compiler implements ICompiler {
 		return executeTeXMF(new String[] { "mf", arg }, tfm_loc, "mf");
 	}
 
+	/**
+	 * Identify the missing package from the exception (if any) raised in a
+	 * result
+	 * 
+	 * @param result
+	 */
 	private void postProcessResult(IResult result) {
 		if (result != null && result.hasException()
 				&& result.getException() instanceof TeXMFFileNotFoundException) {
@@ -451,20 +522,6 @@ public class Compiler implements ICompiler {
 				result.setException(e);
 			}
 		}
-	}
-
-	private IResult runKpathsea(String kpsecmd) {
-		// System.out.println("Execute Kpathsea command >> " + kpsecmd);
-		if (kpsecmd.startsWith("mktexfmt"))
-			return makeFMT(kpsecmd.substring("mktexfmt".length()).trim());
-		else if (kpsecmd.startsWith("mktexpk"))
-			return makePK(kpsecmd);
-		else if (kpsecmd.startsWith("mktextfm"))
-			return makeTFM(kpsecmd.substring("mktextfm".length()).trim());
-		else if (kpsecmd.startsWith("mktexmf"))
-			return makeMF(kpsecmd.substring("mktexmf".length()).trim());
-		else
-			return null; // should it be a new BaseResult
 	}
 
 }

@@ -6,6 +6,8 @@ import lah.tex.core.SystemFileNotFoundException;
 
 public interface IEnvironment {
 
+	String getArchitecture();
+
 	String getBusyBox() throws SystemFileNotFoundException;
 
 	String getCHMOD() throws SystemFileNotFoundException;

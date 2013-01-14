@@ -27,13 +27,23 @@ import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstallationResult;
 import lah.tex.interfaces.IInstaller;
 
+/**
+ * This class installs TeX Live packages
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class Installer extends PkgManBase implements IInstaller {
-
-	private static final String ARCH = "arm-android";
 
 	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
 
 	public static final String PACKAGE_EXTENSION = ".tar.xz";
+
+	/**
+	 * RegEx pattern for the sub-directories in TEXMF_ROOT
+	 */
+	private static final Pattern texmf_subdir_patterns = Pattern
+			.compile("texmf.*|readme.*|tlpkg");
 
 	private Map<String, String[]> depend;
 
@@ -41,8 +51,12 @@ public class Installer extends PkgManBase implements IInstaller {
 
 	final Pattern single_space_pattern = Pattern.compile(" ");
 
+	private final File texmf_dist;
+
 	public Installer(IEnvironment environment) {
 		super(environment);
+		texmf_dist = new File(environment.getTeXMFRootDirectory()
+				+ "/texmf-dist");
 	}
 
 	/**
@@ -80,7 +94,8 @@ public class Installer extends PkgManBase implements IInstaller {
 			if (pdepstr != null) {
 				for (String k : pdepstr) {
 					if (k.endsWith(".ARCH"))
-						k = k.substring(0, k.length() - 4) + ARCH;
+						k = k.substring(0, k.length() - 4)
+								+ environment.getArchitecture();
 					if (!found_packages.contains(k)) {
 						queue.add(k);
 						found_packages.add(k);
@@ -117,9 +132,11 @@ public class Installer extends PkgManBase implements IInstaller {
 		return depend.get(pkg_name);
 	}
 
+	@Override
 	public synchronized IInstallationResult install(
-			IClient<IInstallationResult> client, IFileSupplier file_supplier,
-			String[] package_names, boolean ignore_installed) {
+			IClient<IInstallationResult> client,
+			IFileSupplier package_file_supplier, String[] package_names,
+			boolean ignore_installed) {
 		InstallationResult result = new InstallationResult();
 		result.setRequestedPackages(package_names);
 
@@ -130,7 +147,7 @@ public class Installer extends PkgManBase implements IInstaller {
 		// copy xz, busybox, ... to private directory
 		if (package_names.length == 1 && package_names[0].startsWith("/")) {
 			return installSystemFile(package_names[0].substring(1),
-					file_supplier);
+					package_file_supplier);
 		}
 
 		String[] pkgs_to_install;
@@ -149,10 +166,10 @@ public class Installer extends PkgManBase implements IInstaller {
 			// only continue if some dependent package is missing
 			try {
 				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
-						.substring(0, pkgs_to_install[i].length() - 5) + ARCH
-						: pkgs_to_install[i])
+						.substring(0, pkgs_to_install[i].length() - 5)
+						+ environment.getArchitecture() : pkgs_to_install[i])
 						+ PACKAGE_EXTENSION;
-				File pkg_file = file_supplier.getFile(pkf_file_name);
+				File pkg_file = package_file_supplier.getFile(pkf_file_name);
 				if (pkg_file == null) {
 					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 					continue;
@@ -161,6 +178,8 @@ public class Installer extends PkgManBase implements IInstaller {
 				// decompress the package
 				shell.fork(new String[] { environment.getXZ(), "-d", "-k",
 						pkg_file.getName() }, pkg_file.getParentFile());
+
+				// xzdec(pkg_file, true);
 
 				// untar it to the tree if the tar file exists
 				if (new File(pkg_file.getParentFile() + "/"
@@ -221,7 +240,7 @@ public class Installer extends PkgManBase implements IInstaller {
 
 				// unpack the *.xz files
 				if (df.getName().endsWith(".xz"))
-					df = xzdec(df);
+					df = xzdec(df, false);
 
 				if (file_name.equals("xz") || file_name.equals("busybox")) {
 					// Move binaries to the binary directory and set as
@@ -353,6 +372,12 @@ public class Installer extends PkgManBase implements IInstaller {
 		}
 	}
 
+	/**
+	 * Relocate the extracted files and directories into the standard TeX
+	 * directory structure (i.e. texmf and texmf-dist)
+	 * 
+	 * @throws Exception
+	 */
 	private void relocate() throws Exception {
 		File texmf_root_file = new File(environment.getTeXMFRootDirectory());
 		if (!texmf_root_file.exists())
@@ -362,10 +387,11 @@ public class Installer extends PkgManBase implements IInstaller {
 		if (files == null)
 			return;
 
+		Matcher matcher = texmf_subdir_patterns.matcher("");
+
 		for (File f : files) {
 			if (f.isFile())
 				continue;
-
 			if (f.getName().equals("bin")) {
 				shell.fork(
 						new String[] {
@@ -378,15 +404,13 @@ public class Installer extends PkgManBase implements IInstaller {
 						new String[] { environment.getRM(), "-R", f.getName() },
 						f.getParentFile());
 				shell.fork(new String[] { environment.getCHMOD(), "-R", "700",
-						"." }, new File(environment.getTeXMFBinaryDirectory()));
-			} else if (!f.getName().equals("tlpkg")
-					&& !f.getName().startsWith("texmf")
-					&& !f.getName().startsWith("readme")) {
-				File texmf_dist = new File(environment.getTeXMFRootDirectory()
-						+ "/texmf-dist");
+						environment.getTeXMFBinaryDirectory() + "/../../" },
+						null);
+			} else if (!matcher.reset(f.getName()).matches()) {
+				// this directory should not be in TEXMF_ROOT, relocate it under
+				// texmf-dist sub-directory
 				if (!texmf_dist.exists())
 					texmf_dist.mkdirs();
-				// relocate the directory
 				shell.fork(
 						new String[] { environment.getCP(), "-R", "-f",
 								f.getName(), texmf_dist.getAbsolutePath() + "/" },
@@ -398,11 +422,31 @@ public class Installer extends PkgManBase implements IInstaller {
 		}
 	}
 
-	private File xzdec(File f) throws Exception {
-		shell.fork(new String[] { environment.getXZ(), "-d", f.getName() },
-				f.getParentFile());
-		return new File(f.getParent() + "/"
-				+ f.getName().substring(0, f.getName().length() - 3));
+	/**
+	 * Decompress a XZ file, return the resulting file
+	 * 
+	 * @param xz_file
+	 *            The XZ file to decompress, must have extension ".xz"
+	 * @return The resulting {@link File} of the decompression or
+	 *         {@literal null} if input file is invalid or no result could be
+	 *         produced (for example, xz process fails).
+	 * @throws Exception
+	 */
+	private File xzdec(File xz_file, boolean keep_input) throws Exception {
+		if (xz_file != null && xz_file.getName().endsWith(".xz")) {
+			String[] xz_cmd = new String[keep_input ? 4 : 3];
+			xz_cmd[0] = environment.getXZ();
+			xz_cmd[1] = "-d";
+			xz_cmd[xz_cmd.length - 1] = xz_file.getName();
+			if (keep_input)
+				xz_cmd[2] = "-k";
+			shell.fork(xz_cmd, xz_file.getParentFile());
+			File result = new File(xz_file.getParent()
+					+ "/"
+					+ xz_file.getName().substring(0,
+							xz_file.getName().length() - 3));
+			return (result.exists() ? result : null);
+		}
+		return null;
 	}
-
 }
