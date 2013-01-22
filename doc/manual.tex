@@ -1,3 +1,6 @@
+% prerequisite: use inkscape to convert
+% arch.svg to arch.tikz
+% resulthier.svg to resulthier.tikz
 \documentclass{beamer}
 
 \usepackage{graphics}
@@ -9,58 +12,79 @@
 
 \setbeamertemplate{enumerate item}{(\arabic{enumi})}
 
+\newcommand{\TeXPortal}{\TeX P$\mathcal{O}$rtal}
+
 \begin{document}
 
 \begin{frame}
 \titlepage
 \begin{center}
-%\scriptsize{This slide is compiled using \TeXPortal}
+\scriptsize{This slide is compiled using \TeXPortal}
 \end{center}
 \end{frame}
 
 \begin{frame}[fragile]{Introduction}
-LAHTeX is a project aiming to
+\verb/LAHTeX/ is a project aiming to provide a simple Java library interface to support management and utilization of TeX Live \TeX\ and \LaTeX\ distribution
 \begin{itemize}
-\item Provide a simple Java library interface to support management of TeX Live distribution
-\item Provide backend service to TeXPortal Android application
-\end{itemize}
-This project depends on Spectre project which provides utilities for \verb/Process/ management and streams processing.
-\end{frame}
-
-\begin{frame}[fragile]{Architecture}
-The expose interface includes:
-\begin{itemize}
-\item Operation handler interfaces \verb/IInstaller|ICompiler|ISeeker|ILoader)/ (in package \verb/lah.tex.interfaces/)
-\item Result interfaces I(Installation|Compilation|...)Result (also in package \verb/lah.tex.interfaces/)
-\item Delegator interface (abstract class) \verb/AbstractTeXMF/ to encapsulate all services of LAHTeX 
+\item In particular, it provides back--end service to my \TeXPortal\ Android application
+\item Note that the library could be extended to obtain a TeX Live manager on PC as well!
+\item This project depends on my \verb/LAHSpectre/ project for process invocation, streams processing and common interfaces.
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Actuators}
+\begin{frame}[fragile]{Operational architecture}
+\input{arch.tikz}
+\end{frame}
+
+\begin{frame}[fragile]{Main API}
+Defined at the top level and third level
 \begin{itemize}
-\item \verb/IInstaller/: this interface defines management services to caller
-\begin{itemize}
-\item Query the installed packages
-\item Install a new package
-\item Redo configuration such as enabling additional languages (for Babel package) and regenerate path database (ls-R files)
+\item Client obtains an instance of abstract class \verb/AbstractTeXMF/ via the static method \verb/getInstance(env)/ where \verb/env/ implements the \verb/IEnvironment/ interface that provides distribution specific information such as system architecture, location to store binaries and \TeX\ directories, etc.
+\item \verb/AbstractTeXMF/ combines services defined by \verb/IInstaller/, \verb/ICompiler/, etc interfaces namely compile a document \& analyzes the output for missing packages, install a package, search for a package providing a file, retrieve the list of available packages.
 \end{itemize}
-\item \verb/ICompiler/: this object creates external TeX processes to compile TeX documents. More than that, it performs analysis of the generated log to identify the problems such as missing packages. 
+\textbf{Implementation}: \verb/TeXMF/ implements \verb/AbstractTeXMF/ simply by delegating requests to specific operators.
+\end{frame}
+
+\begin{frame}[fragile]{Result hierarchy}
+API methods return an instance of \verb/IResult/ which contains any (first) \verb/Exception/ raised in its execution. The result hierarchy:\\\vspace{0.25cm}
+\scalebox{0.7}{
+\input{resulthier.tikz}
+}\\
+\vspace{0.25cm}
+\textbf{Note}: Instances of \verb/IResult/ are \emph{progressively} built. For example, the log is appended in  \verb/ICompilationResult/ by \verb/ICompiler/ until invocation of \verb/isComplete()/ returns \textbf{true}.
+\end{frame}
+
+\begin{frame}[fragile]{Exceptions}
+\verb/LAHTeX/ defines 3 \verb/Exception/s classes, all is traced back to some required file being unavailable
+\begin{itemize}
+\item \verb/KpathseaException/: raised when a \TeX\ format, TeX Font Metric (TFM) file, MetaFont source, Packed Bitmap (PK) font, ... is unavailable
+
+These files are either supplied in some TeX Live package or should be generated using some command (for example, \verb/initex/ to generate format).
+\item \verb/SystemFileNotFoundException/: raised when a \verb/LAHTeX/ dependency such as \verb/xz/, \verb/tar/, \verb/ls/, ... executable or file--package \verb/index/ (needed to identify missing package) is missing
+\item \verb/TeXMFFileNotFoundException/: raised when \verb/tex/, \verb/pdftex/ or \verb/mf/ cannot find an input file (such as \LaTeX\ styles \verb/*.sty/)
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Returned results}
-Methods provided by LAHTeX have two characteristics: 
-\begin{enumerate}
-\item they should return instances of \verb/IResult/ which wraps a \verb/Exception/ raised during method execution;
-\item they should NOT raise exception (as a result).
-\end{enumerate}
-Extensions of \verb/IResult/ to contain result for a installation request or a compilation request are defined in the interfaces
+\begin{frame}[fragile]{Implementation details}
 \begin{itemize}
-\item \verb/IInstallationResult/
-\item \verb/ICompilationResult/
-\item \verb/IPackageListRetrievalResult/
+\item \textbf{Install a package}: simply compute dependency (using a pre--built \verb/depend/ file) get \& extract the package \& relocate extracted files in the directory structure, regenerate \verb/ls-R/ and do \verb/chmod/; requires
+\begin{itemize}
+\item An implementation of a system--specific \verb/IFileSupplier/
+
+For instance, \TeXPortal\ obtains files from Dropbox (default) or user--defined mirror using \verb/DownloadManager/ in Android API
+\item Standard UNIX programs (namely \verb/tar/, \verb/xz/, \verb/cp/, \verb/rm/, \verb/ls/, \verb/chmod/)
+
+(These programs, except for \verb/xz/, are provided by \verb/busybox/ in \TeXPortal.)
 \end{itemize}
-Client of LAHTeX should access information in the result using these interfaces.
+\item \textbf{List installed packages}: by listing package description files in the directory \verb_/tlpkg/tlpobj/_
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Implementation details (continued)}
+\begin{itemize}
+\item \textbf{Package search}: using a pre--built \verb/index/ file in which each line is of form \textbf{package-name/file-list/} where \textbf{file-list} contains all files provided in that package, separated by slash
+\item \textbf{Compile documents}: run the process using \verb/TimedShell/, recognize missing file from the standard output $\Rightarrow$ find package(s) provide that missing file
+\end{itemize}
 \end{frame}
 
 \end{document}
