@@ -16,6 +16,8 @@ public interface IInstaller {
 	void makeLanguageConfiguration(String[] languages,
 			boolean[] enable_languages) throws Exception;
 
+	void makeFontConfiguration() throws Exception;
+
 	void makeLSR(String[] files) throws Exception;
 
 }

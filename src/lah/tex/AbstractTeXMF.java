@@ -9,6 +9,12 @@ import lah.tex.interfaces.ISeeker;
 public abstract class AbstractTeXMF implements ICompiler, IInstaller, ISeeker,
 		ILoader {
 
+	public static final String[] all_engines = { "TeX", "LaTeX", "pdfTeX",
+			"pdfLaTeX", "XeTeX", "XeLaTeX", "BibTeX", "MakeIndex" };
+
+	public static final String[] all_languages = { "German", "French",
+			"Vietnamese" };
+
 	private static AbstractTeXMF texmf_instance;
 
 	public static final AbstractTeXMF getInstance(IEnvironment environment) {

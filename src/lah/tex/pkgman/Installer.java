@@ -275,6 +275,12 @@ public class Installer extends PkgManBase implements IInstaller {
 		}
 	}
 
+	@Override
+	public void makeFontConfiguration() throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
 	/**
 	 * Write out language configurations
 	 * 

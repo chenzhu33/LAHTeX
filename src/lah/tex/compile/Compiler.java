@@ -13,6 +13,7 @@ import lah.spectre.interfaces.IClient;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
 import lah.tex.core.BaseResult;
+import lah.tex.core.CompilationCommand;
 import lah.tex.core.KpathseaException;
 import lah.tex.core.TeXMFFileNotFoundException;
 import lah.tex.interfaces.ICompilationCommand;
@@ -330,14 +331,13 @@ public class Compiler implements ICompiler {
 		String[] options = null;
 
 		if (type.equals("fmt")) {
-			engine = program = (format.startsWith("pdf") ? "pdftex" : "tex");
+			engine = program = CompilationCommand.getProgramFromFormat(format);
 			default_ext = "tex";
-			if (format.startsWith("pdf"))
+			if (format.startsWith("pdf") || format.startsWith("xe"))
 				options = new String[] { "-etex" };
 		} else if (type.equals("base")) {
 			engine = "metafont";
 			program = default_ext = "mf";
-			options = null;
 		} else { // type == "mem";
 			engine = "metapost";
 			program = "mpost";

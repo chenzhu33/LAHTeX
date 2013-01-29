@@ -7,6 +7,17 @@ import lah.tex.interfaces.ICompilationCommand;
 
 public class CompilationCommand implements ICompilationCommand {
 
+	public static String getProgramFromFormat(String format) {
+		if (format.startsWith("pdf"))
+			return "pdftex";
+		else if (format.startsWith("xe"))
+			return "xetex";
+		else if (format.startsWith("lua"))
+			return "luatex";
+		else
+			return "tex";
+	}
+
 	File directory;
 
 	String engine;
@@ -32,11 +43,10 @@ public class CompilationCommand implements ICompilationCommand {
 			return new String[] { engine, input_file_no_ext };
 		else {
 			String tex_fmt = engine.equals("pdftex") ? "pdfetex" : engine;
-			return new String[] { engine.startsWith("pdf") ? "pdftex" : "tex",
+			return new String[] { getProgramFromFormat(engine),
 					"-interaction=nonstopmode", "-fmt=" + tex_fmt,
 					input_file.getName() };
 		}
-
 	}
 
 	@Override

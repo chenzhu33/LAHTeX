@@ -89,6 +89,11 @@ class TeXMF extends AbstractTeXMF {
 	}
 
 	@Override
+	public void makeFontConfiguration() throws Exception {
+		getInstaller().makeFontConfiguration();
+	}
+
+	@Override
 	public void makeLanguageConfiguration(String[] languages,
 			boolean[] enable_languages) throws Exception {
 		getInstaller().makeLanguageConfiguration(languages, enable_languages);
