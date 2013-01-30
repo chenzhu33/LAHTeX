@@ -166,9 +166,11 @@ public class Compiler implements ICompiler {
 		TeXMFResult result;
 		while (true) {
 			try {
+				String program = cmd[0].substring(cmd[0].lastIndexOf('/') + 1);
 				cmd[0] = getTeXMFProgram(cmd[0]);
 				output_analyzer.reset(); // generate a new result
-				shell.fork(cmd, dir, output_analyzer, timeout);
+				shell.fork(cmd, dir, getExtraEnvironment(program),
+						output_analyzer, timeout);
 				result = output_analyzer.getTeXMFResult();
 			} catch (Exception e) {
 				result = output_analyzer.getTeXMFResult();
@@ -224,6 +226,25 @@ public class Compiler implements ICompiler {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Get the extra environment variables for program
+	 * 
+	 * @param program
+	 *            The program (tex, pdftex, ...)
+	 * @return
+	 */
+	private String[][] getExtraEnvironment(String program) {
+		// Need to modify TMPDIR for XeTeX to work (by default, it use /tmp
+		// which might not be available (for instance, on Android)
+		String path = environment.getTeXMFBinaryDirectory() + ":"
+				+ System.getenv("PATH");
+		String tmpdir = environment.getTeXMFRootDirectory() + "/texmf-var/tmp";
+		if (program.equals("xetex"))
+			return new String[][] { { "PATH", path }, { "TMPDIR", tmpdir } };
+		else
+			return new String[][] { { "PATH", path } };
 	}
 
 	private String getRealSize(int pointsize) {
