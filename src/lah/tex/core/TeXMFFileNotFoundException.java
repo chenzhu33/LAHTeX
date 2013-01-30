@@ -1,6 +1,6 @@
 package lah.tex.core;
 
-import lah.spectre.CollectionPrinter;
+import lah.spectre.Collections;
 import lah.tex.interfaces.ISeeker;
 
 public class TeXMFFileNotFoundException extends Exception {
@@ -28,7 +28,7 @@ public class TeXMFFileNotFoundException extends Exception {
 				+ missing_file
 				+ (missing_package != null ? ". Probably the package"
 						+ (missing_package.length > 1 ? "s " : " ")
-						+ CollectionPrinter.stringOfArray(missing_package,
+						+ Collections.stringOfArray(missing_package,
 								", ", null, null)
 						+ (missing_package.length > 1 ? " are " : " is ")
 						+ "missing or not properly installed." : "");

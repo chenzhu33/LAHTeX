@@ -43,14 +43,13 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 	private final Matcher pdftex_error_start = Pattern.compile(
 			"!pdfTeX error: .+").matcher("");
 
-	// private IProgressListener<ICompilationResult> progress_listener;
-
 	private final Matcher pdftex_missing_file_matcher = Pattern.compile(
 			"!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
 
 	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
 			.matcher("");
 
+	// for XeTeX
 	private final Matcher[] tex_missing_file_matchers = {
 			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*")
 					.matcher(""),
@@ -59,8 +58,11 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 					"! Package fontenc Error: Encoding file `([^`']*)' not found.")
 					.matcher(""),
 			Pattern.compile(
+					"Could not open config file \"(dvipdfmx\\.cfg)\"\\.")
+					.matcher(""),
+			Pattern.compile(
 					"! OOPS! I can't find any hyphenation patterns for US english.")
-					.matcher("") };
+					.matcher(""), };
 
 	private TeXMFResult texmf_result;
 
@@ -114,12 +116,14 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 
 			// Looking for missing TeX|MF files
 			for (int i = 0; i < tex_missing_file_matchers.length; i++) {
-				if (tex_missing_file_matchers[i].reset(line).matches()) {
-					throw (i == 3 ? new TeXMFFileNotFoundException(
-							"hyphen.tex", default_file_extension)
-							: new TeXMFFileNotFoundException(
-									tex_missing_file_matchers[i].group(1),
-									default_file_extension));
+				if (tex_missing_file_matchers[i].reset(line).find()) {
+					if (i == tex_missing_file_matchers.length - 1)
+						throw new TeXMFFileNotFoundException("hyphen.tex",
+								default_file_extension);
+					else
+						throw new TeXMFFileNotFoundException(
+								tex_missing_file_matchers[i].group(1),
+								default_file_extension);
 				}
 			}
 		}

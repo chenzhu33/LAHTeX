@@ -238,13 +238,17 @@ public class Compiler implements ICompiler {
 	private String[][] getExtraEnvironment(String program) {
 		// Need to modify TMPDIR for XeTeX to work (by default, it use /tmp
 		// which might not be available (for instance, on Android)
+		// and also set up FONTCONFIG_PATH does not exists (on Android)
 		String path = environment.getTeXMFBinaryDirectory() + ":"
 				+ System.getenv("PATH");
-		String tmpdir = environment.getTeXMFRootDirectory() + "/texmf-var/tmp";
-		if (program.equals("xetex"))
-			return new String[][] { { "PATH", path }, { "TMPDIR", tmpdir } };
-		else
-			return new String[][] { { "PATH", path } };
+		String tmpdir = texmf_var + "/tmp";
+		String fontconfig_path = texmf_var + "/fonts/conf";
+		if (program.equals("xetex")) {
+			new File(tmpdir + "/").mkdirs();
+			return new String[][] { { "PATH", path }, { "TMPDIR", tmpdir },
+					{ "FONTCONFIG_PATH", fontconfig_path } };
+		}
+		return new String[][] { { "PATH", path } };
 	}
 
 	private String getRealSize(int pointsize) {
