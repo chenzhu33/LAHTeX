@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +22,7 @@ import lah.spectre.process.TimedShell;
 import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
 import lah.tex.core.SystemFileNotFoundException;
+import lah.tex.core.TeXMFFileNotFoundException;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstallationResult;
 import lah.tex.interfaces.IInstaller;
@@ -35,6 +35,12 @@ import lah.tex.interfaces.IInstaller;
  */
 public class Installer extends PkgManBase implements IInstaller {
 
+	private static final Pattern lang_pattern = Pattern
+			.compile("% from hyphen-(.*):\n[^%]*");
+
+	private static final String[] language_files = { "language.dat",
+			"language.def" };
+
 	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
 
 	public static final String PACKAGE_EXTENSION = ".tar.xz";
@@ -46,6 +52,8 @@ public class Installer extends PkgManBase implements IInstaller {
 			.compile("texmf.*|readme.*|tlpkg");
 
 	private Map<String, String[]> depend;
+
+	private Map<String, String> language_dat_map, language_def_map;
 
 	private TimedShell shell = new TimedShell();
 
@@ -105,6 +113,27 @@ public class Installer extends PkgManBase implements IInstaller {
 			}
 		}
 		return pkgs_to_install.toArray(new String[pkgs_to_install.size()]);
+	}
+
+	public String[] getAllLanguages() throws Exception {
+		for (String lf : language_files) {
+			File langfile = new File(environment.getTeXMFRootDirectory()
+					+ "/texmf/tex/generic/config/" + lf);
+			if (!langfile.exists())
+				throw new TeXMFFileNotFoundException(lf, null);
+			String content = Streams.readTextFile(langfile);
+			Matcher langconfig_matcher = lang_pattern.matcher(content);
+			Map<String, String> lfmap;
+			if (lf.equals(language_files[0]))
+				lfmap = language_dat_map = new TreeMap<String, String>();
+			else
+				lfmap = language_def_map = new TreeMap<String, String>();
+			while (langconfig_matcher.find())
+				lfmap.put(langconfig_matcher.group(1),
+						langconfig_matcher.group());
+		}
+		return language_dat_map.keySet().toArray(
+				new String[language_dat_map.size()]);
 	}
 
 	public Set<String> getInstalledPackages() {
@@ -304,59 +333,53 @@ public class Installer extends PkgManBase implements IInstaller {
 		}
 		// Execute command to re-generate the font cache
 		shell.fork(new String[] { environment.getTeXMFBinaryDirectory()
-				+ "/fc-cache" }, null, new String[][] { { "FONTCONFIG_PATH",
-				configdir.getAbsolutePath() } }, null, 0);
+				+ "/fc-cache" }, null, new String[] { "FONTCONFIG_PATH",
+				configdir.getAbsolutePath() }, null, 0);
 	}
 
-	/**
-	 * Write out language configurations
-	 * 
-	 * Writing language.dat to /texmf-var/tex/generic/config/language.dat
-	 * Writing language.def to /texmf-var/tex/generic/config/language.def
-	 * writing language.dat.lua to
-	 * /texmf-var/tex/generic/config/language.dat.lua
-	 * 
-	 * @throws Exception
-	 */
 	@Override
-	public void makeLanguageConfiguration(String[] languages,
-			boolean[] enable_languages) throws Exception {
+	public void makeLanguageConfiguration(String[] languages) throws Exception {
 		final String texmf_language_config = environment
 				.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
-		// language_configs[i] is a String array whose first element is the name
-		// of the configuration file and the remaining is its content to write
-		// to.
-		String[][] language_configs = {
-				{
-						"language.dat",
-						"english		hyphen.tex  % do not change!",
-						"=usenglish",
-						"=USenglish",
-						"=american",
-						"dumylang	dumyhyph.tex    %for testing a new language.",
-						"nohyphenation	zerohyph.tex    %a language with no patterns at all." },
-				{
-						"language.def",
-						"%% e-TeX V2.0;2",
-						"\\addlanguage {USenglish}{hyphen}{}{2}{3} %%% This MUST be the first non-comment line of the file",
-						"\\uselanguage {USenglish}             %%% This MUST be the last line of the file." }
-
-		};
 		new File(texmf_language_config).mkdirs();
-		boolean is_modified = false;
-		for (int i = 0; i < language_configs.length; i++) {
-			if (!new File(texmf_language_config + "/" + language_configs[i][0])
-					.exists()) {
-				FileWriter fwr = new FileWriter(new File(texmf_language_config
-						+ "/" + language_configs[i][0]));
-				for (int j = 1; j < language_configs[i].length; j++)
-					fwr.write(language_configs[i][j] + "\n");
-				fwr.close();
-				is_modified = true;
-			}
+		// Write language.dat
+		String language_dat = "english		hyphen.tex  % do not change!\n"
+				+ "=usenglish\n"
+				+ "=USenglish\n"
+				+ "=american\n"
+				+ "dumylang	dumyhyph.tex    %for testing a new language.\n"
+				+ "nohyphenation	zerohyph.tex    %a language with no patterns at all.\n";
+		if (languages != null) {
+			if (language_dat_map == null)
+				getAllLanguages();
+			for (int i = 0; i < languages.length; i++)
+				language_dat = language_dat
+						+ language_dat_map.get(languages[i]);
 		}
-		if (is_modified)
-			makeLSR(null);
+		Streams.writeStringToFile(language_dat, new File(texmf_language_config
+				+ "/language.dat"), false);
+		// Write language.def
+		String language_def = "%% e-TeX V2.0;2\n"
+				+ "\\addlanguage {USenglish}{hyphen}{}{2}{3} %%% This MUST be the first non-comment line of the file\n";
+		if (languages != null) {
+			if (language_def_map == null)
+				getAllLanguages();
+			for (int i = 0; i < languages.length; i++)
+				language_def = language_def
+						+ language_def_map.get(languages[i]);
+		}
+		language_def = language_def
+				+ "\\uselanguage {USenglish}             %%% This MUST be the last line of the file.\n";
+		Streams.writeStringToFile(language_def, new File(texmf_language_config
+				+ "/language.def"), false);
+		// Regenerate path databases and remove existing format files, if any
+		shell.fork(
+				new String[] {
+						"rm",
+						"-r",
+						environment.getTeXMFRootDirectory()
+								+ "/texmf-var/web2c" }, null);
+		makeLSR(null);
 	}
 
 	/**

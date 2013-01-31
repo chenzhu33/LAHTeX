@@ -45,6 +45,11 @@ class TeXMF extends AbstractTeXMF {
 		return getCompiler().compile(client, command, timeout);
 	}
 
+	@Override
+	public String[] getAllLanguages() throws Exception {
+		return getInstaller().getAllLanguages();
+	}
+
 	private ICompiler getCompiler() {
 		if (texmf_compiler == null)
 			texmf_compiler = new lah.tex.compile.Compiler(environment,
@@ -94,9 +99,8 @@ class TeXMF extends AbstractTeXMF {
 	}
 
 	@Override
-	public void makeLanguageConfiguration(String[] languages,
-			boolean[] enable_languages) throws Exception {
-		getInstaller().makeLanguageConfiguration(languages, enable_languages);
+	public void makeLanguageConfiguration(String[] languages) throws Exception {
+		getInstaller().makeLanguageConfiguration(languages);
 	}
 
 	@Override

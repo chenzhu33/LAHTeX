@@ -20,6 +20,9 @@ public class TeXMFFileNotFoundException extends Exception {
 				+ (missing_file.indexOf('.') < 0
 						&& default_file_extension != null ? "."
 						+ default_file_extension : "");
+		if (missing_file.equals("language.dat")
+				|| missing_file.equals("language.def"))
+			missing_package = new String[] { "hyphen-base" };
 	}
 
 	@Override
@@ -28,8 +31,8 @@ public class TeXMFFileNotFoundException extends Exception {
 				+ missing_file
 				+ (missing_package != null ? ". Probably the package"
 						+ (missing_package.length > 1 ? "s " : " ")
-						+ Collections.stringOfArray(missing_package,
-								", ", null, null)
+						+ Collections.stringOfArray(missing_package, ", ",
+								null, null)
 						+ (missing_package.length > 1 ? " are " : " is ")
 						+ "missing or not properly installed." : "");
 	}

@@ -7,16 +7,17 @@ import lah.spectre.interfaces.IFileSupplier;
 
 public interface IInstaller {
 
+	String[] getAllLanguages() throws Exception;
+
 	Set<String> getInstalledPackages();
 
 	IInstallationResult install(IClient<IInstallationResult> client,
 			IFileSupplier package_supplier, String[] package_names,
 			boolean ignore_installed);
 
-	void makeLanguageConfiguration(String[] languages,
-			boolean[] enable_languages) throws Exception;
-
 	void makeFontConfiguration() throws Exception;
+
+	void makeLanguageConfiguration(String[] languages) throws Exception;
 
 	void makeLSR(String[] files) throws Exception;
 

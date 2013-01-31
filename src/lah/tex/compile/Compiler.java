@@ -85,6 +85,8 @@ public class Compiler implements ICompiler {
 	 */
 	private TimedShell shell;
 
+	private String[] tex_extra_environment;
+
 	private final String texmf_var;
 
 	public Compiler(IEnvironment environment, ISeeker seeker,
@@ -166,11 +168,10 @@ public class Compiler implements ICompiler {
 		TeXMFResult result;
 		while (true) {
 			try {
-				String program = cmd[0].substring(cmd[0].lastIndexOf('/') + 1);
 				cmd[0] = getTeXMFProgram(cmd[0]);
 				output_analyzer.reset(); // generate a new result
-				shell.fork(cmd, dir, getExtraEnvironment(program),
-						output_analyzer, timeout);
+				shell.fork(cmd, dir, getExtraEnvironment(), output_analyzer,
+						timeout);
 				result = output_analyzer.getTeXMFResult();
 			} catch (Exception e) {
 				result = output_analyzer.getTeXMFResult();
@@ -229,26 +230,23 @@ public class Compiler implements ICompiler {
 	}
 
 	/**
-	 * Get the extra environment variables for program
+	 * Get the array containing necessary extra environment variables such as
+	 * PATH, TMPDIR, FONTCONFIG (for XeTeX to work)
 	 * 
-	 * @param program
-	 *            The program (tex, pdftex, ...)
-	 * @return
+	 * @return The array containing environment variables ready for used with
+	 *         {@link TimedShell#fork}.
 	 */
-	private String[][] getExtraEnvironment(String program) {
-		// Need to modify TMPDIR for XeTeX to work (by default, it use /tmp
-		// which might not be available (for instance, on Android)
-		// and also set up FONTCONFIG_PATH does not exists (on Android)
-		String path = environment.getTeXMFBinaryDirectory() + ":"
-				+ System.getenv("PATH");
-		String tmpdir = texmf_var + "/tmp";
-		String fontconfig_path = texmf_var + "/fonts/conf";
-		if (program.equals("xetex")) {
+	private String[] getExtraEnvironment() {
+		if (tex_extra_environment == null) {
+			String path = environment.getTeXMFBinaryDirectory() + ":"
+					+ System.getenv("PATH");
+			String tmpdir = texmf_var + "/tmp";
+			String fontconfig_path = texmf_var + "/fonts/conf";
 			new File(tmpdir + "/").mkdirs();
-			return new String[][] { { "PATH", path }, { "TMPDIR", tmpdir },
-					{ "FONTCONFIG_PATH", fontconfig_path } };
+			tex_extra_environment = new String[] { "PATH", path, "TMPDIR",
+					tmpdir, "FONTCONFIG_PATH", fontconfig_path };
 		}
-		return new String[][] { { "PATH", path } };
+		return tex_extra_environment;
 	}
 
 	private String getRealSize(int pointsize) {
@@ -377,7 +375,7 @@ public class Compiler implements ICompiler {
 		// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
 		// found
 		try {
-			installer.makeLanguageConfiguration(null, null);
+			installer.makeLanguageConfiguration(null);
 		} catch (Exception e) {
 			return new BaseResult(e);
 		}
