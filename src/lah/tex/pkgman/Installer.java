@@ -188,12 +188,13 @@ public class Installer extends PkgManBase implements IInstaller {
 		}
 		result.setPendingPackages(pkgs_to_install);
 
-		// FileRelocator relocator = new TDSFileLocator(texmf_root);
+		final String texmf_root = environment.getTeXMFRootDirectory();
 		for (int i = 0; i < pkgs_to_install.length; i++) {
 			result.setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
 			// TODO Fix this: return on failure to install requested package
 			// only continue if some dependent package is missing
 			try {
+				// Retrieve the package
 				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
 						.substring(0, pkgs_to_install[i].length() - 5)
 						+ environment.getArchitecture() : pkgs_to_install[i])
@@ -204,13 +205,23 @@ public class Installer extends PkgManBase implements IInstaller {
 					continue;
 				}
 
-				// decompress the package
+				// Copy the package to TeX root (if necessary)
+				if (!pkg_file.getParentFile().getAbsolutePath()
+						.equals(texmf_root)) {
+					File new_pkg_file = new File(texmf_root + "/"
+							+ pkg_file.getName());
+					Streams.streamToFile(new FileInputStream(pkg_file),
+							new_pkg_file, true, false);
+					pkg_file = new_pkg_file;
+				}
+
+				// Decompress the package, assuming that the file is in root
 				shell.fork(new String[] { environment.getXZ(), "-d", "-k",
 						pkg_file.getName() }, pkg_file.getParentFile());
 
 				// xzdec(pkg_file, true);
 
-				// untar it to the tree if the tar file exists
+				// Untar the decompressed package to the tree if it exists
 				if (new File(pkg_file.getParentFile() + "/"
 						+ pkgs_to_install[i] + ".tar").exists()) {
 					shell.fork(new String[] { environment.getTAR(), "-xf",
@@ -231,7 +242,8 @@ public class Installer extends PkgManBase implements IInstaller {
 				result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 			}
 		}
-		// post download and extract packages
+
+		// Post download and extract packages
 		try {
 			relocate(); // relocate the files to the TeX directory structures
 			makeLSR(null); // and also regenerate ls-R files
