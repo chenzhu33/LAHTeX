@@ -370,14 +370,20 @@ public class Compiler implements ICompiler {
 		if (name == null || engine == null)
 			return null;
 
-		// Prepare the language files if they do not exist
+		// Prepare the default language files if they do not exist
 		// Regenerate path database to make sure that necessary input
 		// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
 		// found
-		try {
-			installer.makeLanguageConfiguration(null);
-		} catch (Exception e) {
-			return new BaseResult(e);
+		if (!new File(environment.getTeXMFRootDirectory()
+				+ "/texmf-var/tex/generic/config/language.dat").exists()
+				|| !new File(environment.getTeXMFRootDirectory()
+						+ "/texmf-var/tex/generic/config/language.def")
+						.exists()) {
+			try {
+				installer.makeLanguageConfiguration(null);
+			} catch (Exception e) {
+				return new BaseResult(e);
+			}
 		}
 
 		// Location of the memory dump file
