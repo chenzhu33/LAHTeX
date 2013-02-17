@@ -305,15 +305,16 @@ public class Installer extends PkgManBase implements IInstaller {
 	}
 
 	private void loadDependMap() throws Exception {
-		depend = new TreeMap<String, String[]>();
+		Map<String, String[]> temp_depend = new TreeMap<String, String[]>();
 		String depend_content = Streams.readTextFile(environment
 				.getPackageDependFile());
 		Matcher matcher = line_pattern.matcher(depend_content);
 		while (matcher.find()) {
 			String p = matcher.group(1);
 			String[] ds = single_space_pattern.split(matcher.group(2));
-			depend.put(p, ds);
+			temp_depend.put(p, ds);
 		}
+		depend = temp_depend;
 	}
 
 	@Override
