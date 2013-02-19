@@ -10,7 +10,8 @@ public abstract class AbstractTeXMF implements ICompiler, IInstaller, ISeeker,
 		ILoader {
 
 	public static final String[] all_engines = { "TeX", "LaTeX", "pdfTeX",
-			"pdfLaTeX", "XeTeX", "XeLaTeX", "BibTeX", "MakeIndex" };
+			"pdfLaTeX", "LuaTeX", "LuaLaTeX", "XeTeX", "XeLaTeX", "BibTeX",
+			"MakeIndex" };
 
 	private static AbstractTeXMF texmf_instance;
 

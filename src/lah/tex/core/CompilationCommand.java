@@ -18,13 +18,13 @@ public class CompilationCommand implements ICompilationCommand {
 			return "tex";
 	}
 
-	File directory;
+	private File directory;
 
-	String engine;
+	private String engine;
 
-	File input_file;
+	private File input_file;
 
-	String input_file_no_ext;
+	private String input_file_no_ext;
 
 	public CompilationCommand(String engine, File input) {
 		this.engine = engine;
@@ -62,7 +62,8 @@ public class CompilationCommand implements ICompilationCommand {
 	@Override
 	public String getOutputType() {
 		if (engine.equals("pdftex") || engine.equals("pdflatex")
-				|| engine.equals("xetex") || engine.equals("xelatex"))
+				|| engine.equals("xetex") || engine.equals("xelatex")
+				|| engine.equals("luatex") || engine.equals("lualatex"))
 			return "pdf";
 		else if (engine.equals("tex") || engine.equals("latex"))
 			return "dvi";
