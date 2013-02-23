@@ -244,7 +244,8 @@ public class Compiler implements ICompiler {
 			String fontconfig_path = texmf_var + "/fonts/conf";
 			new File(tmpdir + "/").mkdirs();
 			tex_extra_environment = new String[] { "PATH", path, "TMPDIR",
-					tmpdir, "FONTCONFIG_PATH", fontconfig_path };
+					tmpdir, "FONTCONFIG_PATH", fontconfig_path, "OSFONTDIR",
+					environment.getOSFontsDir() };
 		}
 		return tex_extra_environment;
 	}
@@ -514,6 +515,9 @@ public class Compiler implements ICompiler {
 				if (line.startsWith("TEXMFROOT"))
 					writer.write("TEXMFROOT = "
 							+ environment.getTeXMFRootDirectory() + "\n");
+				else if (line.startsWith("TEXMFVAR")
+						&& environment.isPortable())
+					writer.write("TEXMFVAR = $TEXMFSYSVAR\n");
 				else
 					writer.write(line + "\n");
 			}

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -115,6 +116,32 @@ public class Installer extends PkgManBase implements IInstaller {
 		return pkgs_to_install.toArray(new String[pkgs_to_install.size()]);
 	}
 
+	/**
+	 * Fix lualibs-file.lua function iswritable and isreadable
+	 */
+	private void fixLualibsFile() {
+		File lualibs_file_lua = new File(environment.getTeXMFRootDirectory()
+				+ "/texmf-dist/tex/luatex/lualibs/lualibs-file.lua");
+		if (lualibs_file_lua.exists()) {
+			try {
+				String content = Streams.readTextFile(lualibs_file_lua);
+				content = Pattern
+						.compile(
+								"return a and sub(a.permissions,1,1) == \"r\"",
+								Pattern.LITERAL).matcher(content)
+						.replaceFirst("return a");
+				content = Pattern
+						.compile(
+								"return a and sub(a.permissions,2,2) == \"w\"",
+								Pattern.LITERAL).matcher(content)
+						.replaceFirst("return a");
+				Streams.writeStringToFile(content, lualibs_file_lua, false);
+			} catch (IOException e) {
+				System.out.println("Error modifying lualibs-file.lua");
+			}
+		}
+	}
+
 	public String[] getAllLanguages() throws Exception {
 		for (String lf : language_files) {
 			File langfile = new File(environment.getTeXMFRootDirectory()
@@ -189,6 +216,7 @@ public class Installer extends PkgManBase implements IInstaller {
 		result.setPendingPackages(pkgs_to_install);
 
 		final String texmf_root = environment.getTeXMFRootDirectory();
+		boolean has_lualibs = false;
 		for (int i = 0; i < pkgs_to_install.length; i++) {
 			result.setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
 			// TODO Fix this: return on failure to install requested package
@@ -235,6 +263,9 @@ public class Installer extends PkgManBase implements IInstaller {
 				} else {
 					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 				}
+
+				has_lualibs = has_lualibs
+						|| pkgs_to_install[i].equals("lualibs");
 			} catch (SystemFileNotFoundException e) {
 				result.setException(e);
 				return result;
@@ -247,6 +278,8 @@ public class Installer extends PkgManBase implements IInstaller {
 		try {
 			relocate(); // relocate the files to the TeX directory structures
 			makeLSR(null); // and also regenerate ls-R files
+			if (has_lualibs)
+				fixLualibsFile();
 			result.setState(IInstallationResult.STATE_INSTALLATION_FINISH);
 		} catch (Exception e) {
 			result.setException(e);

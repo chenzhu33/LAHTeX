@@ -16,6 +16,8 @@ public interface IEnvironment {
 
 	String getLS() throws SystemFileNotFoundException;
 
+	String getOSFontsDir();
+
 	File getPackageDependFile() throws SystemFileNotFoundException;
 
 	File getPackageDescriptionFile() throws SystemFileNotFoundException;
@@ -31,5 +33,7 @@ public interface IEnvironment {
 	String getTeXMFRootDirectory();
 
 	String getXZ() throws SystemFileNotFoundException;
+
+	boolean isPortable();
 
 }
