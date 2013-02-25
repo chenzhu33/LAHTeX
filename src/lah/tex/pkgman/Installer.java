@@ -368,13 +368,12 @@ public class Installer extends PkgManBase implements IInstaller {
 					+ "/texmf-dist/fonts";
 			String config = "<?xml version=\"1.0\"?>"
 					+ "<!DOCTYPE fontconfig SYSTEM \"fonts.dtd\"><fontconfig>"
-					+ "<cachedir>"
-					+ cachedir.getAbsolutePath()
-					+ "</cachedir>\n"
-					+ "<dir>/system/fonts</dir>\n" // Android system fonts
-					+ "<dir>" + tl_fonts + "/opentype</dir>\n" + "<dir>"
-					+ tl_fonts + "/truetype</dir>\n" + "<dir>" + tl_fonts
-					+ "/type1</dir>\n" + "</fontconfig>\n";
+					+ "<cachedir>" + cachedir.getAbsolutePath() + "</cachedir>\n"
+					+ "<dir>" + environment.getOSFontsDir() + "</dir>\n"
+					+ "<dir>" + tl_fonts + "/opentype</dir>\n"
+					+ "<dir>" + tl_fonts + "/truetype</dir>\n"
+					+ "<dir>" + tl_fonts + "/type1</dir>\n"
+					+ "</fontconfig>\n";
 			Streams.writeStringToFile(config, configfile, false);
 		}
 		// Execute command to re-generate the font cache
