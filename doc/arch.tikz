@@ -1,0 +1,90 @@
+
+
+
+\begin{tikzpicture}[y=0.80pt, x=0.8pt,yscale=-1, inner sep=0pt, outer sep=0pt]
+\path[fill=black] (46.335152,102.36218) node[above right] (text2996)
+  {IEnvironment};
+\path[fill=black] (277.41241,102.36218) node[above right] (text3000)
+  {IFileSupplier};
+\path[fill=black] (156.23064,102.36218) node[above right] (text3004)
+  {AbstractTeXMF};
+\path[fill=black] (181.71588,152.36218) node[above right] (text3008) {TeXMF};
+\path[fill=black] (51.414215,202.36218) node[above right] (text3012)
+  {ICompiler};
+\path[fill=black] (233.52258,202.36218) node[above right] (text3016)
+  {IInstaller};
+\path[fill=black] (325.75415,202.36218) node[above right] (text3020) {ILoader};
+\path[fill=black] (150.3179,202.36218) node[above right] (text3024) {ISeeker};
+\path[fill=black] (9.0289993,302.36218) node[above right] (text3028)
+  {TeXMFOutputAnalyzer};
+\path[fill=black] (53.309246,252.36218) node[above right] (text3036) {Compiler};
+\path[fill=black] (151.8878,252.36218) node[above right] (text3040) {Seeker};
+\path[fill=black] (235.09248,252.36218) node[above right] (text3044)
+  {Installer};
+\path[fill=black] (326.53909,252.36218) node[above right] (text3048) {Loader};
+\path[draw=black,miter limit=4.00,line width=1.350pt,rounded corners=0.0000cm]
+  (29.2292,90.4079) rectangle (129.9661,108.7034);
+\path[draw=black,miter limit=4.00,line width=1.350pt,rounded corners=0.0000cm]
+  (265.9772,88.8711) rectangle (366.7141,107.1666);
+\path[draw=black,miter limit=4.00,line width=1.350pt,rounded corners=0.0000cm]
+  (147.0607,89.2229) rectangle (247.7976,107.5183);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (158.1641,137.2792) rectangle (236.6657,155.7809);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (36.1044,189.8709) rectangle (114.6060,208.3725);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (128.3360,189.8709) rectangle (206.8376,208.3725);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (213.8955,190.2634) rectangle (292.3972,208.7650);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (303.7722,189.8709) rectangle (382.2739,208.3725);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (34.1420,240.1077) rectangle (112.6436,258.6093);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (127.5510,239.7152) rectangle (206.0527,258.2168);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (213.5030,239.7152) rectangle (292.0047,258.2168);
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (302.5948,239.7152) rectangle (381.0965,258.2168);
+\path[draw=black,miter limit=4.00,line width=1.200pt,rounded corners=0.0000cm]
+  (1.5714,289.6916) rectangle (141.7577,307.6992);
+\path[fill=black] (225.90265,302.36218) node[above right] (text3917)
+  {TimedShell};
+\path[draw=black,miter limit=4.00,line width=1.199pt,rounded corners=0.0000cm]
+  (212.1838,290.7501) rectangle (290.6855,309.2517);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (200.1622,136.8668) -- (200.5547,107.8713);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (248.2159,98.0594) -- (265.9018,97.8632);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (146.3650,98.1744) -- (129.1242,98.0594);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (169.4934,155.6243) -- (76.5326,189.5061);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (187.2779,155.8682) -- (170.3341,190.0948);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (208.0117,155.7532) -- (256.2861,189.8985);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (230.3828,156.1457) -- (348.7140,190.0948);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (75.1589,239.9391) -- (75.2263,207.5123);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (172.8852,240.1353) -- (172.9804,208.5074);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (255.1087,239.7429) -- (255.1087,208.9336);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (345.3779,239.7429) -- (345.3541,208.8761);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (74.7665,258.9741) -- (74.9627,289.3909);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (90.0730,258.5817) -- (211.5440,299.3990);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (253.4897,258.8760) -- (253.5389,290.2740);
+\path[fill=black] (0,102.36218) node[above right] (text3121) {API};
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (83.0084,240.1353) -- (135.7963,208.3449);
+\path[draw=black,line join=miter,line cap=butt,line width=0.800pt]
+  (103.4171,239.7429) -- (235.0925,208.9336);
+
+\end{tikzpicture}
+
