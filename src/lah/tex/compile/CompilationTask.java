@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lah.tex.core.BaseResult;
+import lah.tex.core.BaseTask;
 import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 
-class TeXMFResult extends BaseResult implements ICompilationResult {
+public class CompilationTask extends BaseTask implements ICompilationResult {
 
 	static final Pattern badboxPattern = Pattern
 			.compile("(Over|Under)(full \\\\[hv]box .*)");
@@ -37,14 +37,21 @@ class TeXMFResult extends BaseResult implements ICompilationResult {
 
 	private int state;
 
+	private String tex_engine, tex_src;
+
 	final Matcher warningMatcher = warningPattern.matcher("");
 
-	public TeXMFResult() {
+	public CompilationTask() {
 		super();
 	}
 
-	public TeXMFResult(Exception e) {
+	public CompilationTask(Exception e) {
 		super(e);
+	}
+
+	public CompilationTask(String tex_engine, String tex_src) {
+		this.tex_engine = tex_engine;
+		this.tex_src = tex_src;
 	}
 
 	void appendLog(String line) {
@@ -65,6 +72,11 @@ class TeXMFResult extends BaseResult implements ICompilationResult {
 	@Override
 	public ICompilationCommand getCompilationCommand() {
 		return compilation_command;
+	}
+
+	@Override
+	public CharSequence getDescription() {
+		return tex_engine + " " + tex_src;
 	}
 
 	/**
@@ -107,6 +119,23 @@ class TeXMFResult extends BaseResult implements ICompilationResult {
 	@Override
 	public boolean isComplete() {
 		return state == STATE_COMPLETE;
+	}
+
+	@Override
+	public void run() {
+		status = "Executing";
+		File tex_src_file = new File(tex_src);
+		if (tex_src_file.exists()) {
+			// compile the input file using the engine
+			System.out.println(tex_engine + " " + tex_src_file.getName());
+			// portal.setLatestInputFile(tex_src);
+			// portal.getTeXMF().compile(this,
+			// new CompilationCommand(tex_engine, tex_src_file), 100000);
+			status = "Complete";
+		} else {
+			System.out.println("ERROR: " + tex_src + " does not exist!");
+			// set the error to FileNotFoundException
+		}
 	}
 
 	void setCompilationCommand(ICompilationCommand cmd) {

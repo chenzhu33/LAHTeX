@@ -64,11 +64,11 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 					"! OOPS! I can't find any hyphenation patterns for US english.")
 					.matcher(""), };
 
-	private TeXMFResult texmf_result;
+	private CompilationTask texmf_result;
 
-	public TeXMFResult getTeXMFResult() {
+	public CompilationTask getTeXMFResult() {
 		if (texmf_result == null)
-			texmf_result = new TeXMFResult();
+			texmf_result = new CompilationTask();
 		return texmf_result;
 	}
 
@@ -131,7 +131,7 @@ class TeXMFOutputAnalyzer implements IBufferProcessor {
 
 	public void reset() {
 		output_buffer.delete(0, output_buffer.length());
-		texmf_result = new TeXMFResult();
+		texmf_result = new CompilationTask();
 		texmf_result.setState(ICompilationResult.STATE_INIT);
 		if (client != null)
 			client.onServerReady(texmf_result);

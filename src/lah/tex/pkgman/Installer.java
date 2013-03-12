@@ -193,7 +193,7 @@ public class Installer extends PkgManBase implements IInstaller {
 			IClient<IInstallationResult> client,
 			IFileSupplier package_file_supplier, String[] package_names,
 			boolean ignore_installed) {
-		InstallationResult result = new InstallationResult();
+		InstallationTask result = new InstallationTask();
 		result.setRequestedPackages(package_names);
 
 		// inform the listener that the result is initialized
@@ -292,7 +292,7 @@ public class Installer extends PkgManBase implements IInstaller {
 		// String[] app_data_files = { "xz", "busybox", "desc", "depend",
 		// "index", "dbkeys" };
 		// String[] commands = { "cp", "ls", "tar", "chmod", "rm" };
-		InstallationResult result = new InstallationResult();
+		InstallationTask result = new InstallationTask();
 		try {
 			// Create necessary symbolic links for system commands
 			if (file_name.equals("cp") || file_name.equals("ls")
@@ -368,12 +368,11 @@ public class Installer extends PkgManBase implements IInstaller {
 					+ "/texmf-dist/fonts";
 			String config = "<?xml version=\"1.0\"?>"
 					+ "<!DOCTYPE fontconfig SYSTEM \"fonts.dtd\"><fontconfig>"
-					+ "<cachedir>" + cachedir.getAbsolutePath() + "</cachedir>\n"
-					+ "<dir>" + environment.getOSFontsDir() + "</dir>\n"
-					+ "<dir>" + tl_fonts + "/opentype</dir>\n"
-					+ "<dir>" + tl_fonts + "/truetype</dir>\n"
-					+ "<dir>" + tl_fonts + "/type1</dir>\n"
-					+ "</fontconfig>\n";
+					+ "<cachedir>" + cachedir.getAbsolutePath()
+					+ "</cachedir>\n" + "<dir>" + environment.getOSFontsDir()
+					+ "</dir>\n" + "<dir>" + tl_fonts + "/opentype</dir>\n"
+					+ "<dir>" + tl_fonts + "/truetype</dir>\n" + "<dir>"
+					+ tl_fonts + "/type1</dir>\n" + "</fontconfig>\n";
 			Streams.writeStringToFile(config, configfile, false);
 		}
 		// Execute command to re-generate the font cache

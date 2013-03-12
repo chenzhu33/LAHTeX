@@ -2,11 +2,11 @@ package lah.tex.pkgman;
 
 import java.util.List;
 
-import lah.tex.core.BaseResult;
+import lah.tex.core.BaseTask;
 import lah.tex.interfaces.IPackage;
 import lah.tex.interfaces.IPackageListRetrievalResult;
 
-public class PackageListRetrievalResult extends BaseResult implements
+public class PackageListRetrievalResult extends BaseTask implements
 		IPackageListRetrievalResult {
 
 	List<IPackage> package_list;

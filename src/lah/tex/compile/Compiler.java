@@ -12,7 +12,7 @@ import lah.spectre.CommandLineArguments;
 import lah.spectre.interfaces.IClient;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
-import lah.tex.core.BaseResult;
+import lah.tex.core.BaseTask;
 import lah.tex.core.CompilationCommand;
 import lah.tex.core.KpathseaException;
 import lah.tex.core.TeXMFFileNotFoundException;
@@ -123,8 +123,9 @@ public class Compiler implements ICompiler {
 			ICompilationCommand cmd, long timeout) {
 		output_analyzer.setDefaultFileExtension("tex");
 		output_analyzer.setClient(client); // set the client to report to
-		TeXMFResult result = executeTeXMF(cmd.getCommand(), cmd.getDirectory(),
-				timeout <= 0 ? default_compilation_timeout : timeout);
+		CompilationTask result = executeTeXMF(cmd.getCommand(),
+				cmd.getDirectory(), timeout <= 0 ? default_compilation_timeout
+						: timeout);
 		result.setCompilationCommand(cmd); // pass the command to get result
 		output_analyzer.setClient(null);
 		return result;
@@ -163,9 +164,9 @@ public class Compiler implements ICompiler {
 	 *            Time allowance for command execution
 	 * @return
 	 */
-	private synchronized TeXMFResult executeTeXMF(String[] cmd, File dir,
+	private synchronized CompilationTask executeTeXMF(String[] cmd, File dir,
 			long timeout) {
-		TeXMFResult result;
+		CompilationTask result;
 		while (true) {
 			try {
 				cmd[0] = getTeXMFProgram(cmd[0]);
@@ -176,7 +177,7 @@ public class Compiler implements ICompiler {
 			} catch (Exception e) {
 				result = output_analyzer.getTeXMFResult();
 				if (result == null)
-					result = new TeXMFResult(e);
+					result = new CompilationTask(e);
 				else
 					result.setException(e);
 			}
@@ -211,11 +212,13 @@ public class Compiler implements ICompiler {
 	 * @param timeout
 	 * @return
 	 */
-	private TeXMFResult executeTeXMF(String[] cmd, File dir, String default_ext) {
+	private CompilationTask executeTeXMF(String[] cmd, File dir,
+			String default_ext) {
 		// Execute the command and restore extension
 		final String old_default_ext = output_analyzer.default_file_extension;
 		output_analyzer.setDefaultFileExtension(default_ext);
-		TeXMFResult result = executeTeXMF(cmd, dir, default_compilation_timeout);
+		CompilationTask result = executeTeXMF(cmd, dir,
+				default_compilation_timeout);
 		output_analyzer.setDefaultFileExtension(old_default_ext);
 
 		// Regenerate path database again for generated files to be found
@@ -383,7 +386,7 @@ public class Compiler implements ICompiler {
 			try {
 				installer.makeLanguageConfiguration(null);
 			} catch (Exception e) {
-				return new BaseResult(e);
+				return new BaseTask(e);
 			}
 		}
 
@@ -414,13 +417,13 @@ public class Compiler implements ICompiler {
 			// System.out.println("Root name = " + rootname);
 			// System.out.println("Point size = " + ptsizestr);
 			if (ptsizestr.isEmpty())
-				return new BaseResult(new Exception(
+				return new BaseTask(new Exception(
 						"Invalid point size input for mktexmf"));
 			else
 				realsize = getRealSize(Integer.parseInt(ptsizestr));
 		} else
 			// Invalid name pattern
-			return new BaseResult(new Exception(
+			return new BaseTask(new Exception(
 					"Invalid font name pattern in mktexmf"));
 
 		// The content of MF source for the font name matching the pattern
@@ -451,7 +454,7 @@ public class Compiler implements ICompiler {
 			installer.makeLSR(null);
 			return null;
 		} catch (Exception e) {
-			return new BaseResult(e);
+			return new BaseTask(e);
 		}
 	}
 
@@ -529,7 +532,7 @@ public class Compiler implements ICompiler {
 	/**
 	 * Generate the necessary TeX Font Metric (TFM) files
 	 */
-	private TeXMFResult makeTFM(String name) {
+	private CompilationTask makeTFM(String name) {
 		int mag = 1;
 		String mfmode = "ljfour";
 		String arg = "\\mode:=" + mfmode + "; \\mag:=" + mag

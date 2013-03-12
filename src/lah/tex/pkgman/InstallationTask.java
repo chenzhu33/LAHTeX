@@ -1,10 +1,10 @@
 package lah.tex.pkgman;
 
-import lah.tex.core.BaseResult;
+import lah.spectre.Collections;
+import lah.tex.core.BaseTask;
 import lah.tex.interfaces.IInstallationResult;
 
-public class InstallationResult extends BaseResult implements
-		IInstallationResult {
+public class InstallationTask extends BaseTask implements IInstallationResult {
 
 	private int installation_state;
 
@@ -12,11 +12,22 @@ public class InstallationResult extends BaseResult implements
 
 	private int[] package_states;
 
+	private String[] packages;
+
 	private String[] pending_packages;
 
 	private String[] requested_packages;
 
-	public InstallationResult() {
+	public InstallationTask() {
+	}
+
+	public InstallationTask(String[] packages) {
+		this.packages = packages;
+	}
+
+	@Override
+	public CharSequence getDescription() {
+		return "Install" + Collections.stringOfArray(packages, " ", null, null);
 	}
 
 	@Override
@@ -44,6 +55,15 @@ public class InstallationResult extends BaseResult implements
 		return num_success_packages
 				+ (pending_packages != null ? "/" + pending_packages.length
 						: "") + " packages successfully installed.";
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		status = "Executing";
+		// portal.getTeXMF().install(this, portal.getFileSupplier(), packages,
+		// false);
+		status = "Complete";
 	}
 
 	@Override
