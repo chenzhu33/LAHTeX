@@ -1,4 +1,4 @@
-package lah.tex.core;
+package lah.tex.exceptions;
 
 import lah.spectre.Collections;
 import lah.tex.interfaces.ISeeker;

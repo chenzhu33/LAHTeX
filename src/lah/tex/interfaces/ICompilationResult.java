@@ -3,7 +3,7 @@ package lah.tex.interfaces;
 import java.io.File;
 
 import lah.spectre.interfaces.IResult;
-import lah.tex.compile.LogLine;
+import lah.tex.task.LogLine;
 
 /**
  * Interface to contain result of a compilation process

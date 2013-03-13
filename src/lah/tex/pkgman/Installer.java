@@ -22,11 +22,12 @@ import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
-import lah.tex.core.SystemFileNotFoundException;
-import lah.tex.core.TeXMFFileNotFoundException;
+import lah.tex.exceptions.SystemFileNotFoundException;
+import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstallationResult;
 import lah.tex.interfaces.IInstaller;
+import lah.tex.task.InstallationTask;
 
 /**
  * This class installs TeX Live packages

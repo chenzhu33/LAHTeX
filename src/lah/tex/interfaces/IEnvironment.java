@@ -2,7 +2,7 @@ package lah.tex.interfaces;
 
 import java.io.File;
 
-import lah.tex.core.SystemFileNotFoundException;
+import lah.tex.exceptions.SystemFileNotFoundException;
 
 public interface IEnvironment {
 

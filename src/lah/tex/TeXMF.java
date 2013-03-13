@@ -17,6 +17,12 @@ import lah.tex.pkgman.Installer;
 import lah.tex.pkgman.Loader;
 import lah.tex.pkgman.Seeker;
 
+/**
+ * Implementation of {@link AbstractTeXMF}
+ * 
+ * @author L.A.H.
+ * 
+ */
 class TeXMF extends AbstractTeXMF {
 
 	public static final String _CPU = "arm";

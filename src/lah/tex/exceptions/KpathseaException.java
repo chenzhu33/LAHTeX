@@ -1,4 +1,4 @@
-package lah.tex.core;
+package lah.tex.exceptions;
 
 /**
  * Raise when a kpathsea command needs to be run

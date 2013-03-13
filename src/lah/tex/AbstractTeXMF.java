@@ -6,6 +6,12 @@ import lah.tex.interfaces.IInstaller;
 import lah.tex.interfaces.ILoader;
 import lah.tex.interfaces.ISeeker;
 
+/**
+ * Main expose interface to client of this library.
+ * 
+ * @author L.A.H.
+ * 
+ */
 public abstract class AbstractTeXMF implements ICompiler, IInstaller, ISeeker,
 		ILoader {
 

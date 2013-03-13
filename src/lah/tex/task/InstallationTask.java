@@ -1,7 +1,6 @@
-package lah.tex.pkgman;
+package lah.tex.task;
 
 import lah.spectre.Collections;
-import lah.tex.core.BaseTask;
 import lah.tex.interfaces.IInstallationResult;
 
 public class InstallationTask extends BaseTask implements IInstallationResult {
@@ -72,13 +71,13 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 		setState(STATE_INSTALLATION_ERROR);
 	}
 
-	void setPackageState(int package_id, int package_state) {
+	public void setPackageState(int package_id, int package_state) {
 		package_states[package_id] = package_state;
 		if (package_state == PACKAGE_SUCCESSFULLY_INSTALLED)
 			num_success_packages++;
 	}
 
-	void setPendingPackages(String[] packages) {
+	public void setPendingPackages(String[] packages) {
 		if (packages != null) {
 			// move to state installing packages
 			setState(STATE_INSTALLING_PACKAGES);
@@ -88,11 +87,11 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 		}
 	}
 
-	void setRequestedPackages(String[] req_pkgs) {
+	public void setRequestedPackages(String[] req_pkgs) {
 		requested_packages = req_pkgs;
 	}
 
-	void setState(int state) {
+	public void setState(int state) {
 		installation_state = state;
 	}
 

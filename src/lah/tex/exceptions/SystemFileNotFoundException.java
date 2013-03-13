@@ -1,4 +1,4 @@
-package lah.tex.core;
+package lah.tex.exceptions;
 
 /**
  * This exception should be raised when the some core file (xz, busybox, cp,

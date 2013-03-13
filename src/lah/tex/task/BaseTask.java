@@ -1,7 +1,10 @@
-package lah.tex.core;
+package lah.tex.task;
 
 import lah.spectre.interfaces.IResult;
 import lah.spectre.multitask.Task;
+import lah.tex.exceptions.KpathseaException;
+import lah.tex.exceptions.SystemFileNotFoundException;
+import lah.tex.exceptions.TeXMFFileNotFoundException;
 
 /**
  * Base class for a LAHTeX task.

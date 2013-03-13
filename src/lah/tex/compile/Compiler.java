@@ -12,16 +12,16 @@ import lah.spectre.CommandLineArguments;
 import lah.spectre.interfaces.IClient;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
-import lah.tex.core.BaseTask;
-import lah.tex.core.CompilationCommand;
-import lah.tex.core.KpathseaException;
-import lah.tex.core.TeXMFFileNotFoundException;
+import lah.tex.exceptions.KpathseaException;
+import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 import lah.tex.interfaces.ICompiler;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstaller;
 import lah.tex.interfaces.ISeeker;
+import lah.tex.task.BaseTask;
+import lah.tex.task.CompilationTask;
 
 /**
  * This class handles the actual execution of TeX programs, analyzes the
@@ -71,11 +71,6 @@ public class Compiler implements ICompiler {
 	private IInstaller installer;
 
 	/**
-	 * TeX and MetaFont standard output analyzer
-	 */
-	private final TeXMFOutputAnalyzer output_analyzer;
-
-	/**
 	 * Seeker to identify the missing package
 	 */
 	private ISeeker seeker;
@@ -96,7 +91,6 @@ public class Compiler implements ICompiler {
 		this.installer = installer;
 		shell = new TimedShell();
 		texmf_var = environment.getTeXMFRootDirectory() + "/texmf-var";
-		output_analyzer = new TeXMFOutputAnalyzer();
 	}
 
 	/**
@@ -121,13 +115,13 @@ public class Compiler implements ICompiler {
 	@Override
 	public ICompilationResult compile(IClient<ICompilationResult> client,
 			ICompilationCommand cmd, long timeout) {
-		output_analyzer.setDefaultFileExtension("tex");
-		output_analyzer.setClient(client); // set the client to report to
+		// output_analyzer.setDefaultFileExtension("tex");
+		// output_analyzer.setClient(client); // set the client to report to
 		CompilationTask result = executeTeXMF(cmd.getCommand(),
 				cmd.getDirectory(), timeout <= 0 ? default_compilation_timeout
 						: timeout);
 		result.setCompilationCommand(cmd); // pass the command to get result
-		output_analyzer.setClient(null);
+		// output_analyzer.setClient(null);
 		return result;
 	}
 
@@ -166,16 +160,16 @@ public class Compiler implements ICompiler {
 	 */
 	private synchronized CompilationTask executeTeXMF(String[] cmd, File dir,
 			long timeout) {
-		CompilationTask result;
+		CompilationTask result = null;
 		while (true) {
 			try {
 				cmd[0] = getTeXMFProgram(cmd[0]);
-				output_analyzer.reset(); // generate a new result
-				shell.fork(cmd, dir, getExtraEnvironment(), output_analyzer,
+				// output_analyzer.reset(); // generate a new result
+				shell.fork(cmd, dir, getExtraEnvironment(), null, // output_analyzer,
 						timeout);
-				result = output_analyzer.getTeXMFResult();
+				// result = output_analyzer.getTeXMFResult();
 			} catch (Exception e) {
-				result = output_analyzer.getTeXMFResult();
+				// result = output_analyzer.getTeXMFResult();
 				if (result == null)
 					result = new CompilationTask(e);
 				else
@@ -215,11 +209,12 @@ public class Compiler implements ICompiler {
 	private CompilationTask executeTeXMF(String[] cmd, File dir,
 			String default_ext) {
 		// Execute the command and restore extension
-		final String old_default_ext = output_analyzer.default_file_extension;
-		output_analyzer.setDefaultFileExtension(default_ext);
+		// final String old_default_ext =
+		// output_analyzer.default_file_extension;
+		// output_analyzer.setDefaultFileExtension(default_ext);
 		CompilationTask result = executeTeXMF(cmd, dir,
 				default_compilation_timeout);
-		output_analyzer.setDefaultFileExtension(old_default_ext);
+		// output_analyzer.setDefaultFileExtension(old_default_ext);
 
 		// Regenerate path database again for generated files to be found
 		if (result != null && !result.hasException()) {
@@ -358,7 +353,7 @@ public class Compiler implements ICompiler {
 		String[] options = null;
 
 		if (type.equals("fmt")) {
-			engine = program = CompilationCommand.getProgramFromFormat(format);
+			engine = program = CompilationTask.getProgramFromFormat(format);
 			default_ext = "tex";
 			if (format.startsWith("pdf") || format.startsWith("xe"))
 				options = new String[] { "-etex" };
