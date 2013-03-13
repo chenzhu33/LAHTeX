@@ -2,9 +2,11 @@ package lah.tex.task;
 
 import lah.spectre.interfaces.IResult;
 import lah.spectre.multitask.Task;
+import lah.spectre.process.TimedShell;
 import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.SystemFileNotFoundException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
+import lah.tex.interfaces.IEnvironment;
 
 /**
  * Base class for a LAHTeX task.
@@ -17,11 +19,15 @@ public class BaseTask implements IResult, Task {
 	public static final int STATE_IN_PROGRESS = 0, STATE_EXCEPTION = -1,
 			STATE_SUCCESS = 1;
 
+	protected IEnvironment environment;
+
 	Exception exception;
 
 	private int num_exceptions_resolved;
 
 	private BaseTask retry_task;
+
+	protected TimedShell shell;
 
 	int state;
 
@@ -82,6 +88,25 @@ public class BaseTask implements IResult, Task {
 	public boolean isSuccessful() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	/**
+	 * Identify the missing package from the exception (if any) raised in a
+	 * result
+	 * 
+	 * @param result
+	 */
+	@SuppressWarnings("unused")
+	private void postProcessResult(IResult result) {
+		if (result != null && result.hasException()
+				&& result.getException() instanceof TeXMFFileNotFoundException) {
+			// try {
+			// ((TeXMFFileNotFoundException) result.getException())
+			// .identifyMissingPackage(seeker);
+			// } catch (Exception e) {
+			// result.setException(e);
+			// }
+		}
 	}
 
 	public void resetNumberOfExceptionsResolved() {

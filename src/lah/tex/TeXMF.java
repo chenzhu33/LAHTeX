@@ -13,7 +13,6 @@ import lah.tex.interfaces.IInstaller;
 import lah.tex.interfaces.ILoader;
 import lah.tex.interfaces.IPackageListRetrievalResult;
 import lah.tex.interfaces.ISeeker;
-import lah.tex.pkgman.Installer;
 import lah.tex.pkgman.Loader;
 import lah.tex.pkgman.Seeker;
 
@@ -57,9 +56,9 @@ class TeXMF extends AbstractTeXMF {
 	}
 
 	private ICompiler getCompiler() {
-		if (texmf_compiler == null)
-			texmf_compiler = new lah.tex.compile.Compiler(environment,
-					getSeeker(), getInstaller());
+		// if (texmf_compiler == null)
+		// texmf_compiler = new lah.tex.compile.Compiler(environment,
+		// getSeeker(), getInstaller());
 		return texmf_compiler;
 	}
 
@@ -69,8 +68,8 @@ class TeXMF extends AbstractTeXMF {
 	}
 
 	private IInstaller getInstaller() {
-		if (texmf_installer == null)
-			texmf_installer = new Installer(environment);
+		// if (texmf_installer == null)
+		// texmf_installer = new Installer(environment);
 		return texmf_installer;
 	}
 
