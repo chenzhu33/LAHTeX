@@ -1,7 +1,6 @@
 package lah.tex.exceptions;
 
 import lah.spectre.Collections;
-import lah.tex.interfaces.ISeeker;
 
 public class TeXMFFileNotFoundException extends Exception {
 
@@ -56,17 +55,17 @@ public class TeXMFFileNotFoundException extends Exception {
 			return file_name;
 	}
 
-	public void identifyMissingPackage(ISeeker seeker) throws Exception {
-		if (missing_file.equals("mf"))
-			missing_package = new String[] { "metafont" };
-		else if (missing_file.equals("gftopk"))
-			missing_package = new String[] { "mfware" };
-		else if (missing_file.equals("texmf.cnf"))
-			missing_package = new String[] { "kpathsea" };
-		else if (!missing_file.contains("."))
-			missing_package = new String[] { missing_file };
-		else
-			missing_package = seeker.seekFile(getMissingFile());
+	public void identifyMissingPackage() {//ISeeker seeker) throws Exception {
+		// if (missing_file.equals("mf"))
+		// missing_package = new String[] { "metafont" };
+		// else if (missing_file.equals("gftopk"))
+		// missing_package = new String[] { "mfware" };
+		// else if (missing_file.equals("texmf.cnf"))
+		// missing_package = new String[] { "kpathsea" };
+		// else if (!missing_file.contains("."))
+		// missing_package = new String[] { missing_file };
+		// else
+		// missing_package = seeker.seekFile(getMissingFile());
 	}
 
 }

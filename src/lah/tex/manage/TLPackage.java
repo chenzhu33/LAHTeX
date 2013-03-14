@@ -1,4 +1,4 @@
-package lah.tex.pkgman;
+package lah.tex.manage;
 
 import lah.tex.interfaces.IPackage;
 

@@ -1,4 +1,4 @@
-package lah.tex.task;
+package lah.tex.manage;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,17 +17,21 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import lah.spectre.Collections;
-import lah.spectre.interfaces.IClient;
 import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.Streams;
+import lah.tex.Task;
 import lah.tex.exceptions.SystemFileNotFoundException;
-import lah.tex.interfaces.IEnvironment;
 import lah.tex.interfaces.IInstallationResult;
 
-public class InstallationTask extends BaseTask implements IInstallationResult {
+public class InstallationTask extends Task implements IInstallationResult {
 
-	public static final String PACKAGE_EXTENSION = ".tar.xz";
+	/**
+	 * Map each package to a list of packages it depends on
+	 */
+	private static Map<String, String[]> depend;
+
+	private static final String PACKAGE_EXTENSION = ".tar.xz";
 
 	/**
 	 * RegEx pattern for the sub-directories in TEXMF_ROOT
@@ -35,15 +39,15 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 	private static final Pattern texmf_subdir_patterns = Pattern
 			.compile("texmf.*|readme.*|tlpkg");
 
-	private Map<String, String[]> depend;
-
-	protected IEnvironment environment;
-
 	private int installation_state;
 
 	final Pattern line_pattern = Pattern.compile("([^ ]+) (.*)\n");
 
-	int num_success_packages;
+	private int num_success_packages;
+
+	private IFileSupplier package_file_supplier;
+
+	private String[] package_names;
 
 	private int[] package_states;
 
@@ -58,9 +62,6 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 	final Pattern single_space_pattern = Pattern.compile(" ");
 
 	private File texmf_dist;
-
-	public InstallationTask() {
-	}
 
 	public InstallationTask(String[] packages) {
 		this.packages = packages;
@@ -197,116 +198,11 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 						: "") + " packages successfully installed.";
 	}
 
-	public synchronized IInstallationResult install(
-			IClient<IInstallationResult> client,
-			IFileSupplier package_file_supplier, String[] package_names,
-			boolean ignore_installed) {
-		InstallationTask result = new InstallationTask();
-		result.setRequestedPackages(package_names);
-
-		// inform the listener that the result is initialized
-		if (client != null)
-			client.onServerReady(result);
-
-		// copy xz, busybox, ... to private directory
-		if (package_names.length == 1 && package_names[0].startsWith("/")) {
-			return installSystemFile(package_names[0].substring(1),
-					package_file_supplier);
-		}
-
-		String[] pkgs_to_install;
-		try {
-			pkgs_to_install = addAllDependentPackages(package_names);
-		} catch (Exception e) {
-			result.setException(e);
-			return result;
-		}
-		result.setPendingPackages(pkgs_to_install);
-
-		final String texmf_root = environment.getTeXMFRootDirectory();
-		boolean has_lualibs = false;
-		for (int i = 0; i < pkgs_to_install.length; i++) {
-			result.setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
-			// TODO Fix this: return on failure to install requested package
-			// only continue if some dependent package is missing
-			try {
-				// Retrieve the package
-				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
-						.substring(0, pkgs_to_install[i].length() - 5)
-						+ environment.getArchitecture() : pkgs_to_install[i])
-						+ PACKAGE_EXTENSION;
-				File pkg_file = package_file_supplier.getFile(pkf_file_name);
-				if (pkg_file == null) {
-					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-					continue;
-				}
-
-				// Copy the package to TeX root (if necessary)
-				if (!pkg_file.getParentFile().getAbsolutePath()
-						.equals(texmf_root)) {
-					File new_pkg_file = new File(texmf_root + "/"
-							+ pkg_file.getName());
-					Streams.streamToFile(new FileInputStream(pkg_file),
-							new_pkg_file, true, false);
-					pkg_file = new_pkg_file;
-				}
-
-				// Decompress the package, assuming that the file is in root
-				shell.fork(new String[] { environment.getXZ(), "-d", "-k",
-						pkg_file.getName() }, pkg_file.getParentFile());
-
-				// xzdec(pkg_file, true);
-
-				// Untar the decompressed package to the tree if it exists
-				if (new File(pkg_file.getParentFile() + "/"
-						+ pkgs_to_install[i] + ".tar").exists()) {
-					shell.fork(new String[] { environment.getTAR(), "-xf",
-							pkgs_to_install[i] + ".tar" },
-							pkg_file.getParentFile());
-					shell.fork(new String[] { environment.getRM(),
-							pkgs_to_install[i] + ".tar" },
-							pkg_file.getParentFile());
-					result.setPackageState(i,
-							IInstallationResult.PACKAGE_SUCCESSFULLY_INSTALLED);
-				} else {
-					result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-				}
-
-				has_lualibs = has_lualibs
-						|| pkgs_to_install[i].equals("lualibs");
-			} catch (SystemFileNotFoundException e) {
-				result.setException(e);
-				return result;
-			} catch (Exception e) {
-				result.setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-			}
-		}
-
-		// Post download and extract packages
-		try {
-			relocate(); // relocate the files to the TeX directory structures
-			// makeLSR(null); // and also regenerate ls-R files
-			if (has_lualibs)
-				fixLualibsFile();
-			result.setState(IInstallationResult.STATE_INSTALLATION_FINISH);
-		} catch (Exception e) {
-			result.setException(e);
-		}
-		return result;
-	}
-
-	// public Installer(IEnvironment environment) {
-	// super(environment);
-	// texmf_dist = new File(environment.getTeXMFRootDirectory()
-	// + "/texmf-dist");
-	// }
-
-	private IInstallationResult installSystemFile(String file_name,
-			IFileSupplier file_supplier) {
+	private void installSystemFile(String file_name, IFileSupplier file_supplier) {
 		// String[] app_data_files = { "xz", "busybox", "desc", "depend",
 		// "index", "dbkeys" };
 		// String[] commands = { "cp", "ls", "tar", "chmod", "rm" };
-		InstallationTask result = new InstallationTask();
+		// InstallationTask result = new InstallationTask();
 		try {
 			// Create necessary symbolic links for system commands
 			if (file_name.equals("cp") || file_name.equals("ls")
@@ -344,10 +240,11 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 					df.delete();
 				}
 			}
-			return null;
+			// return null;
 		} catch (Exception e) {
-			result.setException(e);
-			return result;
+			// result.
+			setException(e);
+			// return result;
 		}
 	}
 
@@ -416,10 +313,94 @@ public class InstallationTask extends BaseTask implements IInstallationResult {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		status = "Executing";
-		// portal.getTeXMF().install(this, portal.getFileSupplier(), packages,
-		// false);
+		setRequestedPackages(package_names);
+
+		// copy xz, busybox, ... to private directory
+		if (package_names.length == 1 && package_names[0].startsWith("/")) {
+			installSystemFile(package_names[0].substring(1),
+					package_file_supplier);
+			return;
+		}
+
+		String[] pkgs_to_install;
+		try {
+			pkgs_to_install = addAllDependentPackages(package_names);
+		} catch (Exception e) {
+			setException(e);
+			return;
+		}
+		setPendingPackages(pkgs_to_install);
+
+		final String texmf_root = environment.getTeXMFRootDirectory();
+		boolean has_lualibs = false;
+		for (int i = 0; i < pkgs_to_install.length; i++) {
+			setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
+			// TODO Fix this: return on failure to install requested package
+			// only continue if some dependent package is missing
+			try {
+				// Retrieve the package
+				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
+						.substring(0, pkgs_to_install[i].length() - 5)
+						+ environment.getArchitecture() : pkgs_to_install[i])
+						+ PACKAGE_EXTENSION;
+				File pkg_file = package_file_supplier.getFile(pkf_file_name);
+				if (pkg_file == null) {
+					setPackageState(i, IInstallationResult.PACKAGE_FAIL);
+					continue;
+				}
+
+				// Copy the package to TeX root (if necessary)
+				if (!pkg_file.getParentFile().getAbsolutePath()
+						.equals(texmf_root)) {
+					File new_pkg_file = new File(texmf_root + "/"
+							+ pkg_file.getName());
+					Streams.streamToFile(new FileInputStream(pkg_file),
+							new_pkg_file, true, false);
+					pkg_file = new_pkg_file;
+				}
+
+				// Decompress the package, assuming that the file is in root
+				shell.fork(new String[] { environment.getXZ(), "-d", "-k",
+						pkg_file.getName() }, pkg_file.getParentFile());
+
+				// xzdec(pkg_file, true);
+
+				// Untar the decompressed package to the tree if it exists
+				if (new File(pkg_file.getParentFile() + "/"
+						+ pkgs_to_install[i] + ".tar").exists()) {
+					shell.fork(new String[] { environment.getTAR(), "-xf",
+							pkgs_to_install[i] + ".tar" },
+							pkg_file.getParentFile());
+					shell.fork(new String[] { environment.getRM(),
+							pkgs_to_install[i] + ".tar" },
+							pkg_file.getParentFile());
+					setPackageState(i,
+							IInstallationResult.PACKAGE_SUCCESSFULLY_INSTALLED);
+				} else {
+					setPackageState(i, IInstallationResult.PACKAGE_FAIL);
+				}
+
+				has_lualibs = has_lualibs
+						|| pkgs_to_install[i].equals("lualibs");
+			} catch (SystemFileNotFoundException e) {
+				setException(e);
+				return;
+			} catch (Exception e) {
+				setPackageState(i, IInstallationResult.PACKAGE_FAIL);
+			}
+		}
+
+		// Post download and extract packages
+		try {
+			relocate(); // relocate the files to the TeX directory structures
+			// makeLSR(null); // and also regenerate ls-R files
+			if (has_lualibs)
+				fixLualibsFile();
+			setState(IInstallationResult.STATE_INSTALLATION_FINISH);
+		} catch (Exception e) {
+			setException(e);
+		}
 		status = "Complete";
 	}
 

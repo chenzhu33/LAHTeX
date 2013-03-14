@@ -1,4 +1,4 @@
-package lah.tex.task;
+package lah.tex.compile;
 
 import java.io.File;
 import java.util.regex.Matcher;
@@ -12,8 +12,17 @@ public class MakeFMTTask extends CompilationTask {
 	/**
 	 * Pattern for TeX, MetaFont or MetaPost memory dump file
 	 */
-	static final Pattern format_pattern = Pattern
+	private static final Pattern format_pattern = Pattern
 			.compile("([a-z]*)\\.(fmt|base|mem)");
+
+	/**
+	 * The format file to make
+	 */
+	private String format;
+
+	public MakeFMTTask(String format) {
+		this.format = format;
+	}
 
 	/**
 	 * Make a memory dump file (i.e. a format file)
@@ -24,7 +33,7 @@ public class MakeFMTTask extends CompilationTask {
 	 * @return IResult
 	 */
 	@SuppressWarnings("unused")
-	private IResult makeFMT(IEnvironment environment, String format) {
+	private IResult makeFMT(IEnvironment environment) {
 		Matcher format_matcher = format_pattern.matcher(format);
 		if (!format_matcher.find())
 			return null;

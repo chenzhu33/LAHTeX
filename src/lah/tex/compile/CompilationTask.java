@@ -1,4 +1,4 @@
-package lah.tex.task;
+package lah.tex.compile;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,13 +14,11 @@ import lah.spectre.FileName;
 import lah.spectre.interfaces.IClient;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.IBufferProcessor;
+import lah.tex.Task;
 import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
-import lah.tex.interfaces.IEnvironment;
-import lah.tex.interfaces.IInstaller;
-import lah.tex.interfaces.ISeeker;
 
 /**
  * Class for an compilation task which encapsulates not only the specific
@@ -29,7 +27,7 @@ import lah.tex.interfaces.ISeeker;
  * @author L.A.H.
  * 
  */
-public class CompilationTask extends BaseTask implements ICompilationResult,
+public class CompilationTask extends Task implements ICompilationResult,
 		IBufferProcessor, ICompilationCommand {
 
 	static final Pattern badboxPattern = Pattern
@@ -108,11 +106,6 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 
 	private String engine;
 
-	/**
-	 * System/installation specific environment
-	 */
-	private IEnvironment environment;
-
 	final Matcher errorMatcher = errorPattern.matcher("");
 
 	private int exit_value;
@@ -124,7 +117,7 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 	/**
 	 * Installer to update the environment
 	 */
-	private IInstaller installer;
+	// private IInstaller installer;
 
 	private final Matcher kpathsea_matcher = Pattern.compile(
 			"kpathsea: Running (.+)\\s*").matcher("");
@@ -148,16 +141,6 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 
 	private final Matcher pdftex_missing_file_matcher = Pattern.compile(
 			"!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
-
-	/**
-	 * Seeker to identify the missing package
-	 */
-	private ISeeker seeker;
-
-	/**
-	 * Shell for execute tex commands
-	 */
-	private TimedShell shell;
 
 	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
 			.matcher("");
@@ -189,10 +172,6 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 
 	public CompilationTask() {
 		super();
-	}
-
-	public CompilationTask(Exception e) {
-		super(e);
 	}
 
 	public CompilationTask(String tex_engine, String tex_src) {
@@ -258,6 +237,7 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 	 *            Time allowance for command execution
 	 * @return
 	 */
+	@SuppressWarnings("null")
 	private synchronized CompilationTask executeTeXMF(String[] cmd, File dir,
 			long timeout) {
 		CompilationTask result = null;
@@ -270,10 +250,10 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 				// result = output_analyzer.getTeXMFResult();
 			} catch (Exception e) {
 				// result = output_analyzer.getTeXMFResult();
-				if (result == null)
-					result = new CompilationTask(e);
-				else
-					result.setException(e);
+				// if (result == null)
+				// result = new CompilationTask(e);
+				// else
+				// result.setException(e);
 			}
 
 			// postProcessResult(result);
@@ -319,11 +299,11 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 
 		// Regenerate path database again for generated files to be found
 		if (result != null && !result.hasException()) {
-			try {
-				installer.makeLSR(null);
-			} catch (Exception e) {
-				result.setException(e);
-			}
+			// try {
+			// installer.makeLSR(null);
+			// } catch (Exception e) {
+			// result.setException(e);
+			// }
 		}
 		return result;
 	}
@@ -460,7 +440,7 @@ public class CompilationTask extends BaseTask implements ICompilationResult,
 		} else {
 			TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
 					program_file.getName(), null);
-			e.identifyMissingPackage(seeker);
+			//e.identifyMissingPackage(seeker);
 			throw e;
 		}
 	}

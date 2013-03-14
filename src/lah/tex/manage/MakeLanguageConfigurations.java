@@ -1,4 +1,4 @@
-package lah.tex.task;
+package lah.tex.manage;
 
 import java.io.File;
 import java.util.Map;
@@ -7,9 +7,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lah.spectre.stream.Streams;
+import lah.tex.Task;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
 
-public class MakeLanguageConfigurations extends InstallationTask {
+public class MakeLanguageConfigurations extends Task {
 
 	private static final Pattern lang_pattern = Pattern
 			.compile("% from hyphen-(.*):\n[^%]*");
@@ -82,5 +83,11 @@ public class MakeLanguageConfigurations extends InstallationTask {
 						environment.getTeXMFRootDirectory()
 								+ "/texmf-var/web2c" }, null);
 		// makeLSR(null);
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 }

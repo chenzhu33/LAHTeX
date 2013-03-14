@@ -1,14 +1,14 @@
-package lah.tex.task;
+package lah.tex.compile;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lah.spectre.interfaces.IResult;
-import lah.tex.interfaces.IEnvironment;
+import lah.tex.Task;
 
-public class MakeMFTask extends BaseTask {
+public class MakeMFTask extends Task {
+
 	/**
 	 * Pattern for MetaFont sources
 	 */
@@ -25,6 +25,12 @@ public class MakeMFTask extends BaseTask {
 	 */
 	private static final Pattern mf_font_rootname_pointsize_pattern = Pattern
 			.compile("([a-z]+)([0-9]+)");
+
+	private String name;
+
+	public MakeMFTask(String name) {
+		this.name = name;
+	}
 
 	private String getRealSize(int pointsize) {
 		switch (pointsize) {
@@ -49,25 +55,27 @@ public class MakeMFTask extends BaseTask {
 		}
 	}
 
-	@SuppressWarnings("unused")
-	private IResult makeMF(IEnvironment environment, String name) {
+	@Override
+	public void run() {
 		Matcher rootname_pointsize_matcher = mf_font_rootname_pointsize_pattern
 				.matcher(name);
-		String realsize, rootname;
+		String realsize = null, rootname = null;
 		if (rootname_pointsize_matcher.matches()) {
 			rootname = rootname_pointsize_matcher.group(1);
 			String ptsizestr = rootname_pointsize_matcher.group(2);
 			// System.out.println("Root name = " + rootname);
 			// System.out.println("Point size = " + ptsizestr);
-			if (ptsizestr.isEmpty())
-				return new BaseTask(new Exception(
+			if (ptsizestr.isEmpty()) {
+				setException(new Exception(
 						"Invalid point size input for mktexmf"));
-			else
+				return;
+			} else
 				realsize = getRealSize(Integer.parseInt(ptsizestr));
-		} else
+		} else {
 			// Invalid name pattern
-			return new BaseTask(new Exception(
-					"Invalid font name pattern in mktexmf"));
+			setException(new Exception("Invalid font name pattern in mktexmf"));
+			return;
+		}
 
 		// The content of MF source for the font name matching the pattern
 		String[] mf_content = new String[] {
@@ -96,9 +104,9 @@ public class MakeMFTask extends BaseTask {
 			mf_output.write(mf_content[match]);
 			mf_output.close();
 			// installer.makeLSR(null);
-			return null;
 		} catch (Exception e) {
-			return new BaseTask(e);
+			setException(e);
+			return;
 		}
 	}
 }

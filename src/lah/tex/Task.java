@@ -1,7 +1,6 @@
-package lah.tex.task;
+package lah.tex;
 
 import lah.spectre.interfaces.IResult;
-import lah.spectre.multitask.Task;
 import lah.spectre.process.TimedShell;
 import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.SystemFileNotFoundException;
@@ -14,30 +13,26 @@ import lah.tex.interfaces.IEnvironment;
  * @author L.A.H.
  * 
  */
-public class BaseTask implements IResult, Task {
+public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	public static final int STATE_IN_PROGRESS = 0, STATE_EXCEPTION = -1,
 			STATE_SUCCESS = 1;
 
-	protected IEnvironment environment;
+	protected static IEnvironment environment;
 
-	Exception exception;
+	protected Exception exception;
 
 	private int num_exceptions_resolved;
 
-	private BaseTask retry_task;
+	protected Task retry_task;
 
-	protected TimedShell shell;
+	protected static TimedShell shell;
 
-	int state;
+	protected int state;
 
 	protected String status = "Pending";
 
-	public BaseTask() {
-	}
-
-	public BaseTask(Exception exception) {
-		setException(exception);
+	public Task() {
 	}
 
 	public boolean canResolve(Exception e) {
@@ -59,7 +54,7 @@ public class BaseTask implements IResult, Task {
 		return num_exceptions_resolved;
 	}
 
-	public BaseTask getParentTask() {
+	public Task getParentTask() {
 		return retry_task;
 	}
 
@@ -135,11 +130,6 @@ public class BaseTask implements IResult, Task {
 			// deregister unresolvable tasks
 			// task_manager.deregisterTask(id);
 		}
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
 	}
 
 	public void setException(Exception e) {

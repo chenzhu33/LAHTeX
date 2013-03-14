@@ -1,12 +1,13 @@
-package lah.tex.task;
+package lah.tex.manage;
 
 import java.io.File;
 import java.io.FileOutputStream;
 
 import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
+import lah.tex.Task;
 
-public class MakeLSR extends InstallationTask {
+public class MakeLSR extends Task {
 
 	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
 
@@ -53,5 +54,11 @@ public class MakeLSR extends InstallationTask {
 			// Move the temporary file to the intended location
 			temp_lsRfile.renameTo(lsRfile);
 		}
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 }

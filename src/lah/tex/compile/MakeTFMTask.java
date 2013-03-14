@@ -1,4 +1,4 @@
-package lah.tex.task;
+package lah.tex.compile;
 
 import java.io.File;
 

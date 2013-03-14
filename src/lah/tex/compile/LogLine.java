@@ -1,4 +1,4 @@
-package lah.tex.task;
+package lah.tex.compile;
 
 /**
  * Output log item, can be a warning, an error, a bad-box warning of TeX

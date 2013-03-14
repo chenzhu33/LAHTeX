@@ -1,30 +1,42 @@
-package lah.tex.pkgman;
+package lah.tex.manage;
 
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import lah.spectre.stream.Streams;
-import lah.tex.interfaces.IEnvironment;
+import lah.tex.Task;
 
-public class Seeker extends PkgManBase implements lah.tex.interfaces.ISeeker {
+public class PackageSearchTask extends Task {
 
-	private String index;
+	private static String index;
+
+	private String query;
+
+	private String[] result;
 
 	final Pattern single_dot_pattern = Pattern.compile("\\.");
 
-	public Seeker(IEnvironment environment) {
-		super(environment);
+	public PackageSearchTask(String query) {
+		this.query = query;
+	}
+
+	public String[] getResult() {
+		return result;
 	}
 
 	private void loadIndex() throws Exception {
-		if (index == null) {
+		if (index == null)
 			index = Streams.readTextFile(environment.getPackageIndexFile());
-		}
 	}
 
 	@Override
-	public String[] seekFile(String query) throws Exception {
-		loadIndex();
+	public void run() {
+		try {
+			loadIndex();
+		} catch (Exception e) {
+			setException(e);
+			return;
+		}
 		LinkedList<String> res = new LinkedList<String>();
 		int k = 0;
 		query = "/" + query + "/";
@@ -39,6 +51,7 @@ public class Seeker extends PkgManBase implements lah.tex.interfaces.ISeeker {
 			k++;
 			res.add(index.substring(j, i));
 		}
-		return res.size() > 0 ? res.toArray(new String[res.size()]) : null;
+		result = res.size() > 0 ? res.toArray(new String[res.size()]) : null;
 	}
+
 }
