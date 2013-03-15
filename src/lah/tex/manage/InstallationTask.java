@@ -142,7 +142,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 	}
 
 	@Override
-	public CharSequence getDescription() {
+	public String getDescription() {
 		return "Install" + Collections.stringOfArray(packages, " ", null, null);
 	}
 

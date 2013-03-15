@@ -32,16 +32,13 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected String status = "Pending";
 
-	public Task() {
-	}
-
 	public boolean canResolve(Exception e) {
 		return e != null
 				&& (e instanceof KpathseaException
 						|| e instanceof SystemFileNotFoundException || e instanceof TeXMFFileNotFoundException);
 	}
 
-	public CharSequence getDescription() {
+	public String getDescription() {
 		return null;
 	}
 
@@ -58,7 +55,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return retry_task;
 	}
 
-	public CharSequence getStatus() {
+	public String getStatus() {
 		return status;
 	}
 

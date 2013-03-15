@@ -1,18 +1,16 @@
 package lah.tex.manage;
 
 import java.io.File;
+import java.io.IOException;
 
-import lah.spectre.process.TimedShell;
 import lah.spectre.stream.Streams;
-import lah.tex.interfaces.IEnvironment;
+import lah.tex.Task;
 
-public class MakeFontConfigurations {
+public class MakeFontConfigurations extends Task {
 
-	private IEnvironment environment;
-
-	private TimedShell shell;
-
-	public void makeFontConfiguration() throws Exception {
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
 		// Prepare the font configuration file (if necessary)
 		File configfile = new File(environment.getTeXMFRootDirectory()
 				+ "/texmf-var/fonts/conf/fonts.conf");
@@ -34,11 +32,23 @@ public class MakeFontConfigurations {
 					+ "</dir>\n" + "<dir>" + tl_fonts + "/opentype</dir>\n"
 					+ "<dir>" + tl_fonts + "/truetype</dir>\n" + "<dir>"
 					+ tl_fonts + "/type1</dir>\n" + "</fontconfig>\n";
-			Streams.writeStringToFile(config, configfile, false);
+			try {
+				Streams.writeStringToFile(config, configfile, false);
+			} catch (IOException e) {
+				setException(e);
+				return;
+			}
 		}
 		// Execute command to re-generate the font cache
-		shell.fork(new String[] { environment.getTeXMFBinaryDirectory()
-				+ "/fc-cache" }, null, new String[] { "FONTCONFIG_PATH",
-				configdir.getAbsolutePath() }, null, 0);
+		// TODO Remove this!
+		try {
+			shell.fork(new String[] { environment.getTeXMFBinaryDirectory()
+					+ "/fc-cache" }, null, new String[] { "FONTCONFIG_PATH",
+					configdir.getAbsolutePath() }, null, 0);
+		} catch (Exception e) {
+			setException(e);
+			return;
+		}
 	}
+
 }

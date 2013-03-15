@@ -30,7 +30,7 @@ import lah.tex.interfaces.ICompilationResult;
 public class CompilationTask extends Task implements ICompilationResult,
 		IBufferProcessor, ICompilationCommand {
 
-	static final Pattern badboxPattern = Pattern
+	private static final Pattern badboxPattern = Pattern
 			.compile("(Over|Under)(full \\\\[hv]box .*)");
 
 	/**
@@ -38,9 +38,9 @@ public class CompilationTask extends Task implements ICompilationResult,
 	 */
 	private static final int default_compilation_timeout = 600000;
 
-	static final Pattern errorPattern = Pattern.compile("! (.*)");
+	private static final Pattern errorPattern = Pattern.compile("! (.*)");
 
-	static final Pattern lineNumberPattern = Pattern
+	private static final Pattern lineNumberPattern = Pattern
 			.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*");
 
 	@SuppressWarnings("unused")
@@ -332,7 +332,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 	// Pattern.compile("! Font \\\\[^/]*/([^/]*)/")
 
 	@Override
-	public CharSequence getDescription() {
+	public String getDescription() {
 		return tex_engine + " " + tex_src;
 	}
 
@@ -440,7 +440,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 		} else {
 			TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
 					program_file.getName(), null);
-			//e.identifyMissingPackage(seeker);
+			// e.identifyMissingPackage(seeker);
 			throw e;
 		}
 	}

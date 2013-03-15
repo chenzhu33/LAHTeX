@@ -4,9 +4,6 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lah.spectre.interfaces.IResult;
-import lah.tex.interfaces.IEnvironment;
-
 public class MakeFMTTask extends CompilationTask {
 
 	/**
@@ -16,7 +13,8 @@ public class MakeFMTTask extends CompilationTask {
 			.compile("([a-z]*)\\.(fmt|base|mem)");
 
 	/**
-	 * The format file to make
+	 * The format file to make must be of form *.fmt for TeX format, *.base for
+	 * MetaFont format, *.mem for MetaPost format
 	 */
 	private String format;
 
@@ -24,19 +22,11 @@ public class MakeFMTTask extends CompilationTask {
 		this.format = format;
 	}
 
-	/**
-	 * Make a memory dump file (i.e. a format file)
-	 * 
-	 * @param format
-	 *            Name of a format file (must be of form *.fmt for TeX format,
-	 *            *.base for MetaFont format, *.mem for MetaPost format)
-	 * @return IResult
-	 */
-	@SuppressWarnings("unused")
-	private IResult makeFMT(IEnvironment environment) {
+	@Override
+	public void run() {
 		Matcher format_matcher = format_pattern.matcher(format);
 		if (!format_matcher.find())
-			return null;
+			return;
 
 		String name = format_matcher.group(1);
 		String type = format_matcher.group(2);
@@ -53,14 +43,14 @@ public class MakeFMTTask extends CompilationTask {
 		} else if (type.equals("base")) {
 			engine = "metafont";
 			program = default_ext = "mf";
-		} else { // type == "mem";
+		} else { // type == "mem"
 			engine = "metapost";
 			program = "mpost";
 			default_ext = "mp";
 		}
 
 		if (name == null || engine == null)
-			return null;
+			return;
 
 		// Prepare the default language files if they do not exist
 		// Regenerate path database to make sure that necessary input
@@ -93,6 +83,7 @@ public class MakeFMTTask extends CompilationTask {
 			System.arraycopy(options, 0, cmd, 3, options.length);
 		cmd[cmd.length - 1] = name + ".ini"; // the *.ini input file
 
-		return executeTeXMF(cmd, fmt_loc, default_ext);
+		executeTeXMF(cmd, fmt_loc, default_ext);
 	}
+
 }
