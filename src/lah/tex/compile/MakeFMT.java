@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MakeFMTTask extends CompilationTask {
+public class MakeFMT extends CompilationTask {
 
 	/**
 	 * Pattern for TeX, MetaFont or MetaPost memory dump file
@@ -18,7 +18,7 @@ public class MakeFMTTask extends CompilationTask {
 	 */
 	private String format;
 
-	public MakeFMTTask(String format) {
+	public MakeFMT(String format) {
 		this.format = format;
 	}
 
@@ -82,8 +82,13 @@ public class MakeFMTTask extends CompilationTask {
 		if (options != null)
 			System.arraycopy(options, 0, cmd, 3, options.length);
 		cmd[cmd.length - 1] = name + ".ini"; // the *.ini input file
-
-		executeTeXMF(cmd, fmt_loc, default_ext);
+		setDefaultFileExtension(default_ext);
+		try {
+			shell.fork(cmd, fmt_loc);
+		} catch (Exception e) {
+			setException(e);
+			return;
+		}
 	}
 
 }

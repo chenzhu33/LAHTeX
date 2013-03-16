@@ -28,8 +28,28 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	}
 
 	public String getCommand() {
-		// System.out.println(kpse_command);
 		return kpse_command;
 	}
+
+	/**
+	 * Execute the translated method which corresponds to a mktex(fmt|mf|pk|tfm)
+	 * script in Kpathsea package
+	 * 
+	 * @param command
+	 *            The command to execute
+	 * @return
+	 */
+	// private IResult executeKpathseaScript(String command) {
+	// if (command.startsWith("mktexfmt"))
+	// return makeFMT(command.substring("mktexfmt".length()).trim());
+	// else if (command.startsWith("mktexpk"))
+	// return makePK(command);
+	// else if (command.startsWith("mktextfm"))
+	// return makeTFM(command.substring("mktextfm".length()).trim());
+	// else if (command.startsWith("mktexmf"))
+	// return makeMF(command.substring("mktexmf".length()).trim());
+	// else
+	// return null; // should it be a new BaseResult
+	// }
 
 }

@@ -38,6 +38,6 @@ public interface IInstallationResult extends IResult {
 
 	String[] getRequestedPackages();
 
-	String getSummaryString();
+	//String getSummaryString();
 
 }

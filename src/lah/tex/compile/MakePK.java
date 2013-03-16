@@ -4,10 +4,15 @@ import java.io.File;
 import java.util.Map;
 
 import lah.spectre.CommandLineArguments;
-import lah.spectre.interfaces.IResult;
-import lah.tex.interfaces.IEnvironment;
 
-public class MakePKTask extends CompilationTask {
+public class MakePK extends CompilationTask {
+
+	private String kpse_command;
+
+	public MakePK(String command) {
+		this.kpse_command = command;
+	}
+
 	/**
 	 * Guess the MetaFont mode from the based device DPI
 	 * 
@@ -43,16 +48,9 @@ public class MakePKTask extends CompilationTask {
 		}
 	}
 
-	/**
-	 * Make PK font using arguments from a command line
-	 * 
-	 * @param cmd
-	 * @return
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unused")
-	private IResult makePK(IEnvironment environment, String cmd) {
-		String[] args = cmd.split("\\s+");
+	@Override
+	public void run() {
+		String[] args = kpse_command.split("\\s+");
 		Map<String, String> arg_map = CommandLineArguments
 				.parseCommandLineArguments(args);
 		String name = arg_map.get("$ARG");
@@ -72,13 +70,14 @@ public class MakePKTask extends CompilationTask {
 		File pk_loc = new File(environment.getTeXMFRootDirectory()
 				+ "/texmf-var/fonts/pk/" + mfmode + "/tmp/dpi" + dpi);
 		pk_loc.mkdirs();
-		IResult mfresult = executeTeXMF(new String[] { "mf", arg }, pk_loc,
-				"mf");
-		if (mfresult != null && mfresult.hasException())
-			return mfresult;
-		else
-			return executeTeXMF(new String[] { "gftopk", gf_name, pk_name },
-					pk_loc, null);
+		setDefaultFileExtension("mf");
+		try {
+			shell.fork(new String[] { "mf", arg }, pk_loc);
+			shell.fork(new String[] { "gftopk", gf_name, pk_name }, pk_loc);
+		} catch (Exception e) {
+			setException(e);
+			return;
+		}
 	}
 
 }

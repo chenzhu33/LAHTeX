@@ -11,13 +11,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lah.spectre.FileName;
-import lah.spectre.interfaces.IClient;
-import lah.spectre.process.TimedShell;
 import lah.spectre.stream.IBufferProcessor;
 import lah.tex.Task;
 import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
-import lah.tex.interfaces.ICompilationCommand;
 import lah.tex.interfaces.ICompilationResult;
 
 /**
@@ -28,7 +25,7 @@ import lah.tex.interfaces.ICompilationResult;
  * 
  */
 public class CompilationTask extends Task implements ICompilationResult,
-		IBufferProcessor, ICompilationCommand {
+		IBufferProcessor {
 
 	private static final Pattern badboxPattern = Pattern
 			.compile("(Over|Under)(full \\\\[hv]box .*)");
@@ -43,12 +40,11 @@ public class CompilationTask extends Task implements ICompilationResult,
 	private static final Pattern lineNumberPattern = Pattern
 			.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*");
 
-	@SuppressWarnings("unused")
-	static private Pattern[] other_issue_patterns = {
-			Pattern.compile("! (.*)"),
-			Pattern.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"),
-			Pattern.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)"),
-			Pattern.compile("(Over|Under)(full \\\\[hv]box .*)") };
+	// static private Pattern[] other_issue_patterns = {
+	// Pattern.compile("! (.*)"),
+	// Pattern.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"),
+	// Pattern.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)"),
+	// Pattern.compile("(Over|Under)(full \\\\[hv]box .*)") };
 
 	static final Pattern warningPattern = Pattern
 			.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)");
@@ -64,67 +60,20 @@ public class CompilationTask extends Task implements ICompilationResult,
 			return "tex";
 	}
 
-	// public Compiler(IEnvironment environment, ISeeker seeker,
-	// IInstaller installer) {
-	// this.environment = environment;
-	// this.seeker = seeker;
-	// this.installer = installer;
-	// shell = new TimedShell();
-	// texmf_var = environment.getTeXMFRootDirectory() + "/texmf-var";
-	// }
-
 	private StringBuilder accumulated_error_message;
 
 	final Matcher badboxMatcher = badboxPattern.matcher("");
 
-	/**
-	 * Execute the translated method which corresponds to a mktex(fmt|mf|pk|tfm)
-	 * script in Kpathsea package
-	 * 
-	 * @param command
-	 *            The command to execute
-	 * @return
-	 */
-	// private IResult executeKpathseaScript(String command) {
-	// if (command.startsWith("mktexfmt"))
-	// return makeFMT(command.substring("mktexfmt".length()).trim());
-	// else if (command.startsWith("mktexpk"))
-	// return makePK(command);
-	// else if (command.startsWith("mktextfm"))
-	// return makeTFM(command.substring("mktextfm".length()).trim());
-	// else if (command.startsWith("mktexmf"))
-	// return makeMF(command.substring("mktexmf".length()).trim());
-	// else
-	// return null; // should it be a new BaseResult
-	// }
-
-	private ICompilationCommand compilation_command;
+	private String[] command = null;
 
 	String default_file_extension = "tex";
 
-	private File directory;
-
-	private String engine;
-
 	final Matcher errorMatcher = errorPattern.matcher("");
-
-	private int exit_value;
-
-	private File input_file;
-
-	private String input_file_no_ext;
-
-	/**
-	 * Installer to update the environment
-	 */
-	// private IInstaller installer;
 
 	private final Matcher kpathsea_matcher = Pattern.compile(
 			"kpathsea: Running (.+)\\s*").matcher("");
 
 	final Matcher lineNumberMatcher = lineNumberPattern.matcher("");
-
-	// private IClient<ICompilationResult> client;
 
 	private List<LogLine> logs;
 
@@ -149,9 +98,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	private String tex_engine, tex_src;
 
-	private String[] tex_extra_environment;
-
-	// for XeTeX
 	private final Matcher[] tex_missing_file_matchers = {
 			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*")
 					.matcher(""),
@@ -166,17 +112,31 @@ public class CompilationTask extends Task implements ICompilationResult,
 					"! OOPS! I can't find any hyphenation patterns for US english.")
 					.matcher(""), };
 
-	private String texmf_var;
+	protected long timeout;
 
 	final Matcher warningMatcher = warningPattern.matcher("");
 
-	public CompilationTask() {
-		super();
+	/**
+	 * Protected constructor for subclasses
+	 */
+	protected CompilationTask() {
 	}
 
 	public CompilationTask(String tex_engine, String tex_src) {
 		this.tex_engine = tex_engine;
 		this.tex_src = tex_src;
+		File input_file = new File(tex_src);
+		String input_file_no_ext = FileName.removeFileExtension(input_file
+				.getName());
+		if (tex_engine.equals("bibtex") || tex_engine.equals("makeindex"))
+			this.command = new String[] { tex_engine, input_file_no_ext };
+		else {
+			String tex_fmt = tex_engine.equals("pdftex") ? "pdfetex"
+					: tex_engine;
+			this.command = new String[] { getProgramFromFormat(tex_engine),
+					"-interaction=nonstopmode", "-fmt=" + tex_fmt,
+					input_file.getName() };
+		}
 	}
 
 	void appendLog(String line) {
@@ -201,6 +161,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 	 *         {@literal false} otherwise
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private boolean chmodAllEngines() throws Exception {
 		File bindir = new File(environment.getTeXMFBinaryDirectory()
 				+ "/../../");
@@ -213,119 +174,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 		return true;
 	}
 
-	public ICompilationResult compile(IClient<ICompilationResult> client,
-			ICompilationCommand cmd, long timeout) {
-		// output_analyzer.setDefaultFileExtension("tex");
-		// output_analyzer.setClient(client); // set the client to report to
-		CompilationTask result = executeTeXMF(cmd.getCommand(),
-				cmd.getDirectory(), timeout <= 0 ? default_compilation_timeout
-						: timeout);
-		result.setCompilationCommand(cmd); // pass the command to get result
-		// output_analyzer.setClient(null);
-		return result;
-	}
-
-	/**
-	 * Execute TeX or MF or a distributed command, resolve Kpathsea problems and
-	 * retry the operation as necessary
-	 * 
-	 * @param cmd
-	 *            The command to execute
-	 * @param dir
-	 *            The directory to execute command at
-	 * @param timeout
-	 *            Time allowance for command execution
-	 * @return
-	 */
-	@SuppressWarnings("null")
-	private synchronized CompilationTask executeTeXMF(String[] cmd, File dir,
-			long timeout) {
-		CompilationTask result = null;
-		while (true) {
-			try {
-				cmd[0] = getTeXMFProgram(cmd[0]);
-				// output_analyzer.reset(); // generate a new result
-				shell.fork(cmd, dir, getExtraEnvironment(), null, // output_analyzer,
-						timeout);
-				// result = output_analyzer.getTeXMFResult();
-			} catch (Exception e) {
-				// result = output_analyzer.getTeXMFResult();
-				// if (result == null)
-				// result = new CompilationTask(e);
-				// else
-				// result.setException(e);
-			}
-
-			// postProcessResult(result);
-
-			// resolve KpathseaException that does not require installation
-			// of new packages
-			if (result.hasException()
-					&& result.getException() instanceof KpathseaException
-					&& ((KpathseaException) result.getException())
-							.getMissingPackage() == null) {
-				// IResult temp_result =
-				// executeKpathseaScript(((KpathseaException) result
-				// .getException()).getCommand());
-				// if (temp_result != null && temp_result.hasException()) {
-				// result.setException(temp_result.getException());
-				// break;
-				// }
-			} else {
-				result.setState(ICompilationResult.STATE_COMPLETE);
-				break;
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Execute internal commands to generate formats, fonts, ...
-	 * 
-	 * @param cmd
-	 * @param dir
-	 * @param timeout
-	 * @return
-	 */
-	protected CompilationTask executeTeXMF(String[] cmd, File dir,
-			String default_ext) {
-		// Execute the command and restore extension
-		// final String old_default_ext =
-		// output_analyzer.default_file_extension;
-		// output_analyzer.setDefaultFileExtension(default_ext);
-		CompilationTask result = executeTeXMF(cmd, dir,
-				default_compilation_timeout);
-		// output_analyzer.setDefaultFileExtension(old_default_ext);
-
-		// Regenerate path database again for generated files to be found
-		if (result != null && !result.hasException()) {
-			// try {
-			// installer.makeLSR(null);
-			// } catch (Exception e) {
-			// result.setException(e);
-			// }
-		}
-		return result;
-	}
-
-	@Override
-	public String[] getCommand() {
-		input_file_no_ext = FileName.removeFileExtension(input_file.getName());
-		if (engine.equals("bibtex") || engine.equals("makeindex"))
-			return new String[] { engine, input_file_no_ext };
-		else {
-			String tex_fmt = engine.equals("pdftex") ? "pdfetex" : engine;
-			return new String[] { getProgramFromFormat(engine),
-					"-interaction=nonstopmode", "-fmt=" + tex_fmt,
-					input_file.getName() };
-		}
-	}
-
-	@Override
-	public ICompilationCommand getCompilationCommand() {
-		return compilation_command;
-	}
-
 	// Pattern for missing fonts, probably not necessary
 	// Pattern.compile("! Font \\\\[^=]*=([^\\s]*)\\s"),
 	// Pattern.compile("! Font [^\\n]*file\\:([^\\:\\n]*)\\:"),
@@ -334,46 +182,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 	@Override
 	public String getDescription() {
 		return tex_engine + " " + tex_src;
-	}
-
-	@Override
-	public File getDirectory() {
-		return directory;
-	}
-
-	/**
-	 * Get the exit value of the compilation process
-	 * 
-	 * @return
-	 */
-	public int getExitValue() {
-		return exit_value;
-	}
-
-	/**
-	 * Get the array containing necessary extra environment variables such as
-	 * PATH, TMPDIR, FONTCONFIG (for XeTeX to work)
-	 * 
-	 * @return The array containing environment variables ready for used with
-	 *         {@link TimedShell#fork}.
-	 */
-	private String[] getExtraEnvironment() {
-		if (tex_extra_environment == null) {
-			String path = environment.getTeXMFBinaryDirectory() + ":"
-					+ System.getenv("PATH");
-			String tmpdir = texmf_var + "/tmp";
-			String fontconfig_path = texmf_var + "/fonts/conf";
-			new File(tmpdir + "/").mkdirs();
-			tex_extra_environment = new String[] { "PATH", path, "TMPDIR",
-					tmpdir, "FONTCONFIG_PATH", fontconfig_path, "OSFONTDIR",
-					environment.getOSFontsDir() };
-		}
-		return tex_extra_environment;
-	}
-
-	@Override
-	public String getInputFileWithoutExt() {
-		return input_file_no_ext;
 	}
 
 	@Override
@@ -391,58 +199,65 @@ public class CompilationTask extends Task implements ICompilationResult,
 	 */
 	@Override
 	public File getOutputFile() {
-		ICompilationCommand cmd;
-		if ((cmd = getCompilationCommand()) != null)
-			return new File(cmd.getDirectory() + "/"
-					+ cmd.getInputFileWithoutExt() + "." + getOutputFileType());
+		// ICompilationCommand cmd;
+		// if ((cmd = getCompilationCommand()) != null)
+		// return new File(cmd.getDirectory() + "/"
+		// + cmd.getInputFileWithoutExt() + "." + getOutputFileType());
 		return null;
 	}
 
-	@Override
-	public String getOutputFileType() {
-		return getCompilationCommand() == null ? null : getCompilationCommand()
-				.getOutputType();
-	}
-
-	@Override
 	public String getOutputType() {
-		if (engine.equals("pdftex") || engine.equals("pdflatex")
-				|| engine.equals("xetex") || engine.equals("xelatex")
-				|| engine.equals("luatex") || engine.equals("lualatex"))
+		if (tex_engine.equals("pdftex") || tex_engine.equals("pdflatex")
+				|| tex_engine.equals("xetex") || tex_engine.equals("xelatex")
+				|| tex_engine.equals("luatex") || tex_engine.equals("lualatex"))
 			return "pdf";
-		else if (engine.equals("tex") || engine.equals("latex"))
+		else if (tex_engine.equals("tex") || tex_engine.equals("latex"))
 			return "dvi";
-		else if (engine.equals("bibtex"))
+		else if (tex_engine.equals("bibtex"))
 			return "bbl";
-		else if (engine.equals("makeindex"))
+		else if (tex_engine.equals("makeindex"))
 			return "idx";
 		return null;
 	}
 
-	/**
-	 * Get the absolute path to a TeX program, calling the object that resolve
-	 * the case when the binary is missing whenever necessary.
-	 * 
-	 * @param program
-	 * @return full path to the program or {@literal null} if the program is not
-	 *         installed and the listener cannot resolve it (for e.g., by
-	 *         installing the containing package)
-	 * @throws Exception
-	 */
-	String getTeXMFProgram(String program) throws Exception {
-		chmodAllEngines();
-		File program_file = program.startsWith("/") ? new File(program)
-				: new File(environment.getTeXMFBinaryDirectory() + "/"
-						+ program);
-		if (program_file.exists()) {
-			makeTEXMFCNF();
-			return program_file.getAbsolutePath();
-		} else {
-			TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
-					program_file.getName(), null);
-			// e.identifyMissingPackage(seeker);
-			throw e;
-		}
+	// /**
+	// * Get the absolute path to a TeX program, calling the object that resolve
+	// * the case when the binary is missing whenever necessary.
+	// *
+	// * @param program
+	// * @return full path to the program or {@literal null} if the program is
+	// not
+	// * installed and the listener cannot resolve it (for e.g., by
+	// * installing the containing package)
+	// * @throws Exception
+	// */
+	// String getTeXMFProgram(String program) throws Exception {
+	// chmodAllEngines();
+	// File program_file = program.startsWith("/") ? new File(program)
+	// : new File(environment.getTeXMFBinaryDirectory() + "/"
+	// + program);
+	// if (program_file.exists()) {
+	// makeTEXMFCNF();
+	// return program_file.getAbsolutePath();
+	// } else {
+	// TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
+	// program_file.getName(), null);
+	// // e.identifyMissingPackage(seeker);
+	// throw e;
+	// }
+	// }
+
+	@Override
+	public String getStatus() {
+		if (state == STATE_COMPLETE)
+			if (hasException())
+				return "Error: " + exception.getMessage();
+			else
+				return "Complete successfully!";
+		else if (state == STATE_INPROGRESS)
+			return "Executing ...";
+		else
+			return "Pending";
 	}
 
 	@Override
@@ -456,7 +271,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 	 * 
 	 * @throws Exception
 	 */
-	private void makeTEXMFCNF() throws Exception {
+	public void makeTEXMFCNF() throws Exception {
 		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory()
 				+ "/texmf.cnf");
 		if (!texmfcnf_file.exists()) {
@@ -548,20 +363,24 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	@Override
 	public void run() {
-		status = "Executing";
+		setState(STATE_INPROGRESS);
 		File tex_src_file = new File(tex_src);
 		if (tex_src_file.exists()) {
 			// compile the input file using the engine
-			System.out.println(tex_engine + " " + tex_src_file.getName());
-			status = "Complete";
+			File dir = tex_src_file.getParentFile();
+			timeout = timeout <= 0 ? default_compilation_timeout : timeout;
+			try {
+				shell.fork(command, dir, null, this, timeout);
+				setState(STATE_COMPLETE);
+			} catch (Exception e) {
+				setException(e);
+				return;
+			}
 		} else {
 			setException(new FileNotFoundException("ERROR: " + tex_src
 					+ " does not exist!"));
+			return;
 		}
-	}
-
-	public void setCompilationCommand(ICompilationCommand cmd) {
-		compilation_command = cmd;
 	}
 
 	void setDefaultFileExtension(String ext) {

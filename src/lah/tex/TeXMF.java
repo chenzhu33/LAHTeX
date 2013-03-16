@@ -1,6 +1,9 @@
 package lah.tex;
 
+import java.io.File;
+
 import lah.spectre.Collections;
+import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.compile.CompilationTask;
@@ -17,47 +20,67 @@ import lah.tex.manage.MakeLanguageConfigurations;
  */
 public class TeXMF extends TaskManager<Task> {
 
+	public static final int TASK_COMPILE = 0, TASK_INSTALL_PACKAGE = 1,
+			TASK_MAKE_FONTCONFIG = 2, TASK_MAKE_LANGUAGES_CONFIG = 3;
+
 	private static TeXMF texmf_instance;
 
-	public static final TeXMF getInstance(IEnvironment environment) {
+	public static final TeXMF getInstance(IEnvironment environment,
+			IFileSupplier file_supplier) {
 		if (texmf_instance == null)
-			texmf_instance = new TeXMF(environment);
+			texmf_instance = new TeXMF(environment, file_supplier);
 		return texmf_instance;
 	}
 
-	private TeXMF(IEnvironment environment) {
+	private TeXMF(IEnvironment environment, IFileSupplier file_supplier) {
 		Task.environment = environment;
+		Task.file_supplier = file_supplier;
 		Task.shell = new TimedShell();
+
+		// Set up environment variables such as PATH, TMPDIR, FONTCONFIG
+		// (for XeTeX to work) and OSFONTDIR (for LuaTeX font search)
+		String path = environment.getTeXMFBinaryDirectory() + ":"
+				+ System.getenv("PATH");
+		String tmpdir = environment.getTeXMFRootDirectory() + "/texmf-var/tmp";
+		new File(tmpdir + "/").mkdirs();
+		String fontconfig_path = environment.getTeXMFRootDirectory()
+				+ "/texmf-var/fonts/conf";
+		new File(fontconfig_path + "/").mkdirs();
+		Task.shell.export("PATH", path);
+		Task.shell.export("TMPDIR", tmpdir);
+		Task.shell.export("FONTCONFIG_PATH", fontconfig_path);
+		Task.shell.export("OSFONTDIR", environment.getOSFontsDir());
 	}
 
 	/**
 	 * Create a new task and submit for scheduled execution
 	 * 
+	 * @param task_type
 	 * @param args
 	 * @return the created task
 	 */
-	public Task createTask(String[] args) {
+	public Task createTask(int task_type, String[] args) {
 		System.out.print("Create task "
 				+ Collections.stringOfArray(args, ", ", "[", "]"));
-		if (args == null)
-			return null;
 		Task result_task;
-		if (args[0].equals("lahtex-install")) {
-			// install a new package
-			String[] packages_to_install = new String[args.length - 1];
-			System.arraycopy(args, 0, packages_to_install, 0, args.length - 1);
-			result_task = new InstallationTask(packages_to_install);
-		} else if (args[0].equals("lahtex-makefontconfig")) {
-			result_task = new MakeFontConfigurations();
-		} else if (args[0].equals("lahtex-makelangconfig")) {
-			String[] languages = new String[args.length - 1];
-			System.arraycopy(args, 0, languages, 0, args.length - 1);
-			result_task = new MakeLanguageConfigurations(languages);
-		} else {
-			// compile a file or make font cache fc-cache
+		switch (task_type) {
+		case TASK_COMPILE:
 			result_task = new CompilationTask(args[0], args[1]);
+			break;
+		case TASK_INSTALL_PACKAGE:
+			result_task = new InstallationTask(args);
+			break;
+		case TASK_MAKE_FONTCONFIG:
+			result_task = new MakeFontConfigurations();
+			break;
+		case TASK_MAKE_LANGUAGES_CONFIG:
+			result_task = new MakeLanguageConfigurations(args);
+			break;
+		default:
+			result_task = null;
 		}
-		addTask(result_task);
+		if (result_task != null)
+			add(result_task);
 		return result_task;
 	}
 

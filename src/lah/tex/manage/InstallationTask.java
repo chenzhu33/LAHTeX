@@ -143,7 +143,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public String getDescription() {
-		return "Install" + Collections.stringOfArray(packages, " ", null, null);
+		return "Install " + Collections.stringOfArray(packages, " ", null, null);
 	}
 
 	@Override
@@ -189,13 +189,6 @@ public class InstallationTask extends Task implements IInstallationResult {
 	@Override
 	public String[] getRequestedPackages() {
 		return requested_packages;
-	}
-
-	@Override
-	public String getSummaryString() {
-		return num_success_packages
-				+ (pending_packages != null ? "/" + pending_packages.length
-						: "") + " packages successfully installed.";
 	}
 
 	private void installSystemFile(String file_name, IFileSupplier file_supplier) {
@@ -460,6 +453,13 @@ public class InstallationTask extends Task implements IInstallationResult {
 			return (result.exists() ? result : null);
 		}
 		return null;
+	}
+	
+	@Override
+	public String getStatus() {
+		return num_success_packages
+				+ (pending_packages != null ? "/" + pending_packages.length
+						: "") + " packages successfully installed.";
 	}
 
 }

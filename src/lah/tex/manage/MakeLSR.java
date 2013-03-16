@@ -11,13 +11,8 @@ public class MakeLSR extends Task {
 
 	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
 
-	/**
-	 * Generate the path database files (ls-R) in all TeX directory trees
-	 * (texmf*)
-	 * 
-	 * @throws Exception
-	 */
-	public void makeLSR(String[] files) throws Exception {
+	@Override
+	public void run() {
 		// The directories under tex_root to generate ls-R are:
 		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var" };
 
@@ -42,23 +37,21 @@ public class MakeLSR extends Task {
 			// Create a temporary ls-R file
 			File temp_lsRfile = new File(environment.getTeXMFRootDirectory()
 					+ "/ls-R");
-			Streams.writeStringToFile(lsR_magic, temp_lsRfile, false);
-
-			// Now do the "ls -R . >> ls-R" in the texmf root directory
-			final FileOutputStream stream = new FileOutputStream(temp_lsRfile,
-					true);
-			shell.fork(new String[] { environment.getLS(), "-R", "." },
-					texmf_dir, new StreamRedirector(stream), 600000);
-			stream.close();
+			try {
+				Streams.writeStringToFile(lsR_magic, temp_lsRfile, false);
+				// Now do the "ls -R . >> ls-R" in the texmf root directory
+				final FileOutputStream stream = new FileOutputStream(
+						temp_lsRfile, true);
+				shell.fork(new String[] { environment.getLS(), "-R", "." },
+						texmf_dir, new StreamRedirector(stream), 600000);
+				stream.close();
+			} catch (Exception e) {
+				setException(e);
+				return;
+			}
 
 			// Move the temporary file to the intended location
 			temp_lsRfile.renameTo(lsRfile);
 		}
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
 	}
 }

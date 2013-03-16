@@ -55,7 +55,7 @@ public class TeXMFFileNotFoundException extends Exception {
 			return file_name;
 	}
 
-	public void identifyMissingPackage() {//ISeeker seeker) throws Exception {
+	public void identifyMissingPackage() {// ISeeker seeker) throws Exception {
 		// if (missing_file.equals("mf"))
 		// missing_package = new String[] { "metafont" };
 		// else if (missing_file.equals("gftopk"))

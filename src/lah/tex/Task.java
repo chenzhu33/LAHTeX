@@ -1,11 +1,13 @@
 package lah.tex;
 
+import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
 import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.SystemFileNotFoundException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.interfaces.IEnvironment;
+import lah.tex.manage.InstallationTask;
 
 /**
  * Base class for a LAHTeX task.
@@ -15,18 +17,17 @@ import lah.tex.interfaces.IEnvironment;
  */
 public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
-	public static final int STATE_IN_PROGRESS = 0, STATE_EXCEPTION = -1,
-			STATE_SUCCESS = 1;
-
 	protected static IEnvironment environment;
+
+	protected static IFileSupplier file_supplier;
+
+	protected static TimedShell shell;
 
 	protected Exception exception;
 
 	private int num_exceptions_resolved;
 
 	protected Task retry_task;
-
-	protected static TimedShell shell;
 
 	protected int state;
 
@@ -73,6 +74,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	@Override
 	public boolean isExecutable() {
 		// TODO implement accordingly
+		// false to test!
 		return true;
 	}
 
@@ -82,51 +84,22 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return false;
 	}
 
-	/**
-	 * Identify the missing package from the exception (if any) raised in a
-	 * result
-	 * 
-	 * @param result
-	 */
-	@SuppressWarnings("unused")
-	private void postProcessResult(IResult result) {
-		if (result != null && result.hasException()
-				&& result.getException() instanceof TeXMFFileNotFoundException) {
-			// try {
-			// ((TeXMFFileNotFoundException) result.getException())
-			// .identifyMissingPackage(seeker);
-			// } catch (Exception e) {
-			// result.setException(e);
-			// }
-		}
-	}
-
 	public void resetNumberOfExceptionsResolved() {
 		num_exceptions_resolved = 0;
 	}
 
-	public void resolve(int id, Exception exception) {
-		if (id != 0) {
-			// BaseTask t = task_manager.get(id);
-			// assert (t != null);
-			// t.resetNumberOfExceptionsResolved();
-			// exception = t.getResult().getException();
-		}
+	public Task resolve() {
 		if (exception instanceof SystemFileNotFoundException) {
-			// install(new String[] { ((SystemFileNotFoundException) exception)
-			// .getMissingSystemFile() },
-			// id);
+			return new InstallationTask(
+					new String[] { ((SystemFileNotFoundException) exception)
+							.getMissingSystemFile() });
 		} else if (exception instanceof TeXMFFileNotFoundException
 				&& ((TeXMFFileNotFoundException) exception).getMissingPackage() != null) {
-			// install(((TeXMFFileNotFoundException) exception)
-			// .getMissingPackage(),
-			// id);
-		} else if (id != 0) {
-			// System.out.println("Encounter unresolvable exception:");
-			// exception.printStackTrace(System.out);
-			// deregister unresolvable tasks
-			// task_manager.deregisterTask(id);
-		}
+			return new InstallationTask(
+					((TeXMFFileNotFoundException) exception)
+							.getMissingPackage());
+		} else
+			return null;
 	}
 
 	public void setException(Exception e) {

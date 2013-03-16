@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 import lah.tex.Task;
 
-public class MakeMFTask extends Task {
+public class MakeMF extends Task {
 
 	/**
 	 * Pattern for MetaFont sources
@@ -28,7 +28,7 @@ public class MakeMFTask extends Task {
 
 	private String name;
 
-	public MakeMFTask(String name) {
+	public MakeMF(String name) {
 		this.name = name;
 	}
 
@@ -109,4 +109,5 @@ public class MakeMFTask extends Task {
 			return;
 		}
 	}
+
 }
