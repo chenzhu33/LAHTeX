@@ -10,13 +10,10 @@ import lah.tex.compile.LogLine;
  */
 public interface ICompilationResult extends IResult {
 
-	public static final int STATE_INIT = 0, STATE_INPROGRESS = 1,
-			STATE_COMPLETE = 2;
-
 	LogLine getLogLine(int index);
 
 	File getOutputFile();
 
-	//String getOutputFileType();
+	// String getOutputFileType();
 
 }

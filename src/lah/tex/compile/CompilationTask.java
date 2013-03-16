@@ -94,8 +94,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
 			.matcher("");
 
-	private int state;
-
 	private String tex_engine, tex_src;
 
 	private final Matcher[] tex_missing_file_matchers = {
@@ -139,7 +137,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 		}
 	}
 
-	void appendLog(String line) {
+	public void appendLog(String line) {
 		if (line == null)
 			return;
 		if (logs == null)
@@ -248,19 +246,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 	// }
 
 	@Override
-	public String getStatus() {
-		if (state == STATE_COMPLETE)
-			if (hasException())
-				return "Error: " + exception.getMessage();
-			else
-				return "Complete successfully!";
-		else if (state == STATE_INPROGRESS)
-			return "Executing ...";
-		else
-			return "Pending";
-	}
-
-	@Override
 	public boolean isComplete() {
 		return state == STATE_COMPLETE;
 	}
@@ -358,12 +343,12 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	public void reset() {
 		output_buffer.delete(0, output_buffer.length());
-		setState(ICompilationResult.STATE_INIT);
+		setState(STATE_PENDING);
 	}
 
 	@Override
 	public void run() {
-		setState(STATE_INPROGRESS);
+		setState(STATE_EXECUTING);
 		File tex_src_file = new File(tex_src);
 		if (tex_src_file.exists()) {
 			// compile the input file using the engine
@@ -374,27 +359,14 @@ public class CompilationTask extends Task implements ICompilationResult,
 				setState(STATE_COMPLETE);
 			} catch (Exception e) {
 				setException(e);
-				return;
 			}
 		} else {
-			setException(new FileNotFoundException("ERROR: " + tex_src
-					+ " does not exist!"));
-			return;
+			setException(new FileNotFoundException(tex_src + " does not exist!"));
 		}
 	}
 
 	void setDefaultFileExtension(String ext) {
 		default_file_extension = ext;
-	}
-
-	@Override
-	public void setException(Exception e) {
-		super.setException(e);
-		setState(STATE_COMPLETE);
-	}
-
-	public void setState(int s) {
-		state = s;
 	}
 
 }

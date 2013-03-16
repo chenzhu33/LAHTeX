@@ -60,7 +60,7 @@ public class TeXMF extends TaskManager<Task> {
 	 * @return the created task
 	 */
 	public Task createTask(int task_type, String[] args) {
-		System.out.print("Create task "
+		System.out.println("Create task "
 				+ Collections.stringOfArray(args, ", ", "[", "]"));
 		Task result_task;
 		switch (task_type) {

@@ -18,7 +18,6 @@ import java.util.zip.GZIPInputStream;
 
 import lah.spectre.Collections;
 import lah.spectre.interfaces.IFileSupplier;
-import lah.spectre.process.TimedShell;
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
 import lah.tex.exceptions.SystemFileNotFoundException;
@@ -39,15 +38,9 @@ public class InstallationTask extends Task implements IInstallationResult {
 	private static final Pattern texmf_subdir_patterns = Pattern
 			.compile("texmf.*|readme.*|tlpkg");
 
-	private int installation_state;
-
 	final Pattern line_pattern = Pattern.compile("([^ ]+) (.*)\n");
 
 	private int num_success_packages;
-
-	private IFileSupplier package_file_supplier;
-
-	private String[] package_names;
 
 	private int[] package_states;
 
@@ -55,13 +48,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	private String[] pending_packages;
 
-	private String[] requested_packages;
-
-	protected TimedShell shell = new TimedShell();
-
 	final Pattern single_space_pattern = Pattern.compile(" ");
-
-	private File texmf_dist;
 
 	public InstallationTask(String[] packages) {
 		this.packages = packages;
@@ -143,12 +130,8 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public String getDescription() {
-		return "Install " + Collections.stringOfArray(packages, " ", null, null);
-	}
-
-	@Override
-	public int getInstallationState() {
-		return installation_state;
+		return "Install "
+				+ Collections.stringOfArray(packages, " ", null, null);
 	}
 
 	public Set<String> getInstalledPackages() {
@@ -188,7 +171,16 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public String[] getRequestedPackages() {
-		return requested_packages;
+		return packages;
+	}
+
+	@Override
+	public String getStatus() {
+		if (state == STATE_EXECUTING)
+			return pending_packages == null ? "Computing dependency"
+					: (num_success_packages + "/" + pending_packages.length + " packages installed");
+		else
+			return super.getStatus();
 	}
 
 	private void installSystemFile(String file_name, IFileSupplier file_supplier) {
@@ -233,11 +225,9 @@ public class InstallationTask extends Task implements IInstallationResult {
 					df.delete();
 				}
 			}
-			// return null;
 		} catch (Exception e) {
-			// result.
 			setException(e);
-			// return result;
+			return;
 		}
 	}
 
@@ -264,6 +254,8 @@ public class InstallationTask extends Task implements IInstallationResult {
 		File texmf_root_file = new File(environment.getTeXMFRootDirectory());
 		if (!texmf_root_file.exists())
 			return;
+		File texmf_dist = new File(environment.getTeXMFRootDirectory()
+				+ "/texmf-dist");
 
 		File[] files = texmf_root_file.listFiles();
 		if (files == null)
@@ -306,19 +298,16 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public void run() {
-		status = "Executing";
-		setRequestedPackages(package_names);
-
+		setState(STATE_EXECUTING);
 		// copy xz, busybox, ... to private directory
-		if (package_names.length == 1 && package_names[0].startsWith("/")) {
-			installSystemFile(package_names[0].substring(1),
-					package_file_supplier);
+		if (packages.length == 1 && packages[0].startsWith("/")) {
+			installSystemFile(packages[0].substring(1), file_supplier);
 			return;
 		}
 
 		String[] pkgs_to_install;
 		try {
-			pkgs_to_install = addAllDependentPackages(package_names);
+			pkgs_to_install = addAllDependentPackages(packages);
 		} catch (Exception e) {
 			setException(e);
 			return;
@@ -337,7 +326,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 						.substring(0, pkgs_to_install[i].length() - 5)
 						+ environment.getArchitecture() : pkgs_to_install[i])
 						+ PACKAGE_EXTENSION;
-				File pkg_file = package_file_supplier.getFile(pkf_file_name);
+				File pkg_file = file_supplier.getFile(pkf_file_name);
 				if (pkg_file == null) {
 					setPackageState(i, IInstallationResult.PACKAGE_FAIL);
 					continue;
@@ -390,17 +379,11 @@ public class InstallationTask extends Task implements IInstallationResult {
 			// makeLSR(null); // and also regenerate ls-R files
 			if (has_lualibs)
 				fixLualibsFile();
-			setState(IInstallationResult.STATE_INSTALLATION_FINISH);
 		} catch (Exception e) {
 			setException(e);
+		} finally {
+			setState(STATE_COMPLETE);
 		}
-		status = "Complete";
-	}
-
-	@Override
-	public void setException(Exception e) {
-		super.setException(e);
-		setState(STATE_INSTALLATION_ERROR);
 	}
 
 	public void setPackageState(int package_id, int package_state) {
@@ -412,19 +395,10 @@ public class InstallationTask extends Task implements IInstallationResult {
 	public void setPendingPackages(String[] packages) {
 		if (packages != null) {
 			// move to state installing packages
-			setState(STATE_INSTALLING_PACKAGES);
 			num_success_packages = 0;
 			pending_packages = packages;
 			package_states = new int[pending_packages.length];
 		}
-	}
-
-	public void setRequestedPackages(String[] req_pkgs) {
-		requested_packages = req_pkgs;
-	}
-
-	public void setState(int state) {
-		installation_state = state;
 	}
 
 	/**
@@ -453,13 +427,6 @@ public class InstallationTask extends Task implements IInstallationResult {
 			return (result.exists() ? result : null);
 		}
 		return null;
-	}
-	
-	@Override
-	public String getStatus() {
-		return num_success_packages
-				+ (pending_packages != null ? "/" + pending_packages.length
-						: "") + " packages successfully installed.";
 	}
 
 }

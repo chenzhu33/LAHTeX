@@ -23,15 +23,18 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected static TimedShell shell;
 
+	public static final int STATE_PENDING = 0, STATE_EXECUTING = 1,
+			STATE_COMPLETE = 2;
+
 	protected Exception exception;
 
 	private int num_exceptions_resolved;
 
-	protected Task retry_task;
-
 	protected int state;
 
-	protected String status = "Pending";
+	protected Task() {
+		state = STATE_PENDING;
+	}
 
 	public boolean canResolve(Exception e) {
 		return e != null
@@ -52,23 +55,29 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return num_exceptions_resolved;
 	}
 
-	public Task getParentTask() {
-		return retry_task;
-	}
-
 	public String getStatus() {
-		return status;
+		switch (state) {
+		case STATE_PENDING:
+			return "Pending";
+		case STATE_EXECUTING:
+			return "Executing ...";
+		case STATE_COMPLETE:
+			if (exception != null)
+				return "Error: " + exception.getMessage();
+			return "Complete successfully";
+		default:
+			return null;
+		}
 	}
 
 	@Override
 	public boolean hasException() {
-		return (exception != null);
+		return exception != null;
 	}
 
 	@Override
 	public boolean isComplete() {
-		// TODO Auto-generated method stub
-		return false;
+		return state == STATE_COMPLETE;
 	}
 
 	@Override
@@ -102,8 +111,13 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 			return null;
 	}
 
-	public void setException(Exception e) {
-		exception = e;
+	public void setException(Exception exception) {
+		this.exception = exception;
+		this.state = STATE_COMPLETE;
+	}
+
+	public void setState(int state) {
+		this.state = state;
 	}
 
 }
