@@ -17,6 +17,11 @@ public class GetPackageListTask extends Task implements
 
 	private final Pattern line_pattern = Pattern.compile("([^ ]+) (.*)\n");
 
+	@Override
+	public String getDescription() {
+		return "Get list of available packages";
+	}
+
 	public List<IPackage> getPackageList() {
 		return package_list;
 	}

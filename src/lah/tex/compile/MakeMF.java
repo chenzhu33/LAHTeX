@@ -32,6 +32,11 @@ public class MakeMF extends Task {
 		this.name = name;
 	}
 
+	@Override
+	public String getDescription() {
+		return "Generate METAFONT font " + name + ".mf";
+	}
+
 	private String getRealSize(int pointsize) {
 		switch (pointsize) {
 		case 11:

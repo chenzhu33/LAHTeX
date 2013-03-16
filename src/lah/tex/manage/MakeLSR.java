@@ -12,6 +12,11 @@ public class MakeLSR extends Task {
 	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
 
 	@Override
+	public String getDescription() {
+		return "Generate ls-R";
+	}
+
+	@Override
 	public void run() {
 		// The directories under tex_root to generate ls-R are:
 		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var" };

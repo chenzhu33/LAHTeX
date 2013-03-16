@@ -1,8 +1,10 @@
 package lah.tex.exceptions;
 
 import lah.spectre.Collections;
+import lah.tex.Task;
+import lah.tex.manage.InstallationTask;
 
-public class TeXMFFileNotFoundException extends Exception {
+public class TeXMFFileNotFoundException extends ResolvableException {
 
 	private static final long serialVersionUID = 1L;
 
@@ -44,7 +46,7 @@ public class TeXMFFileNotFoundException extends Exception {
 		return missing_package;
 	}
 
-	String getMissingPackageForFile(String file_name) {
+	public String getMissingPackageForFile(String file_name) {
 		if (file_name.equals("mf"))
 			return "metafont";
 		else if (file_name.equals("gftopk"))
@@ -55,17 +57,25 @@ public class TeXMFFileNotFoundException extends Exception {
 			return file_name;
 	}
 
-	public void identifyMissingPackage() {// ISeeker seeker) throws Exception {
-		// if (missing_file.equals("mf"))
-		// missing_package = new String[] { "metafont" };
-		// else if (missing_file.equals("gftopk"))
-		// missing_package = new String[] { "mfware" };
-		// else if (missing_file.equals("texmf.cnf"))
-		// missing_package = new String[] { "kpathsea" };
-		// else if (!missing_file.contains("."))
-		// missing_package = new String[] { missing_file };
-		// else
+	public void identifyMissingPackage() {
+		if (missing_file.equals("mf"))
+			missing_package = new String[] { "metafont" };
+		else if (missing_file.equals("gftopk"))
+			missing_package = new String[] { "mfware" };
+		else if (missing_file.equals("texmf.cnf"))
+			missing_package = new String[] { "kpathsea" };
+		else if (!missing_file.contains("."))
+			missing_package = new String[] { missing_file };
+		else
+			missing_package = null;
 		// missing_package = seeker.seekFile(getMissingFile());
+	}
+
+	@Override
+	public Task getResolution() {
+		if (getMissingPackage() != null)
+			return new InstallationTask(getMissingPackage());
+		return null;
 	}
 
 }

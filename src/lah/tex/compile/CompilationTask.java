@@ -27,27 +27,27 @@ import lah.tex.interfaces.ICompilationResult;
 public class CompilationTask extends Task implements ICompilationResult,
 		IBufferProcessor {
 
+	/**
+	 * Standard output patterns
+	 */
 	private static final Pattern badboxPattern = Pattern
-			.compile("(Over|Under)(full \\\\[hv]box .*)");
+			.compile("(Over|Under)(full \\\\[hv]box .*)"),
+			errorPattern = Pattern.compile("! (.*)"),
+			lineNumberPattern = Pattern
+					.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"),
+			warningPattern = Pattern
+					.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)");
 
 	/**
 	 * Default time out for compilation; set to 600000 milisec (i.e. 10 minutes)
 	 */
 	private static final int default_compilation_timeout = 600000;
 
-	private static final Pattern errorPattern = Pattern.compile("! (.*)");
-
-	private static final Pattern lineNumberPattern = Pattern
-			.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*");
-
 	// static private Pattern[] other_issue_patterns = {
 	// Pattern.compile("! (.*)"),
 	// Pattern.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"),
 	// Pattern.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)"),
 	// Pattern.compile("(Over|Under)(full \\\\[hv]box .*)") };
-
-	static final Pattern warningPattern = Pattern
-			.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)");
 
 	public static String getProgramFromFormat(String format) {
 		if (format.startsWith("pdf"))
@@ -62,18 +62,17 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	private StringBuilder accumulated_error_message;
 
-	final Matcher badboxMatcher = badboxPattern.matcher("");
+	final Matcher badboxMatcher = badboxPattern.matcher(""),
+			errorMatcher = errorPattern.matcher(""),
+			lineNumberMatcher = lineNumberPattern.matcher(""),
+			warningMatcher = warningPattern.matcher("");
 
 	private String[] command = null;
 
-	String default_file_extension = "tex";
-
-	final Matcher errorMatcher = errorPattern.matcher("");
+	protected String default_file_extension = "tex";
 
 	private final Matcher kpathsea_matcher = Pattern.compile(
 			"kpathsea: Running (.+)\\s*").matcher("");
-
-	final Matcher lineNumberMatcher = lineNumberPattern.matcher("");
 
 	private List<LogLine> logs;
 
@@ -83,12 +82,8 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	private final Matcher pdftex_error_end = Pattern.compile(
 			" ==> Fatal error occurred, no output PDF file produced!").matcher(
-			"");
-
-	private final Matcher pdftex_error_start = Pattern.compile(
-			"!pdfTeX error: .+").matcher("");
-
-	private final Matcher pdftex_missing_file_matcher = Pattern.compile(
+			""), pdftex_error_start = Pattern.compile("!pdfTeX error: .+")
+			.matcher(""), pdftex_missing_file_matcher = Pattern.compile(
 			"!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
 
 	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
@@ -111,8 +106,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 					.matcher(""), };
 
 	protected long timeout;
-
-	final Matcher warningMatcher = warningPattern.matcher("");
 
 	/**
 	 * Protected constructor for subclasses
@@ -287,8 +280,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 	@Override
 	public void processBuffer(byte[] buffer, int count) throws Exception {
 		// reset if there is no result available
-		// if (texmf_result == null)
-		// reset();
 		output_buffer.append(new String(buffer, 0, count));
 		single_line_matcher.reset(output_buffer);
 		String line;
@@ -349,6 +340,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 	@Override
 	public void run() {
 		setState(STATE_EXECUTING);
+		reset();
 		File tex_src_file = new File(tex_src);
 		if (tex_src_file.exists()) {
 			// compile the input file using the engine
@@ -365,7 +357,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 		}
 	}
 
-	void setDefaultFileExtension(String ext) {
+	protected void setDefaultFileExtension(String ext) {
 		default_file_extension = ext;
 	}
 

@@ -1,5 +1,11 @@
 package lah.tex.exceptions;
 
+import lah.tex.Task;
+import lah.tex.compile.MakeFMT;
+import lah.tex.compile.MakeMF;
+import lah.tex.compile.MakePK;
+import lah.tex.compile.MakeTFM;
+
 /**
  * Raise when a kpathsea command needs to be run
  * 
@@ -13,7 +19,6 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	private String kpse_command;
 
 	public KpathseaException(String kpathsea_command) {
-		// System.out.println("KpathseaException : " + kpathsea_command);
 		kpse_command = kpathsea_command.trim();
 		String name = kpse_command.substring(kpse_command.lastIndexOf(' '))
 				.trim();
@@ -24,32 +29,31 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 		else if (kpse_command.startsWith("mktexpk"))
 			missing_file = name + ".pk";
 		else
-			missing_file = name; // *.mf or *.fmt
+			// format file *.(fmt|base|mem)
+			missing_file = name;
 	}
 
 	public String getCommand() {
 		return kpse_command;
 	}
-
-	/**
-	 * Execute the translated method which corresponds to a mktex(fmt|mf|pk|tfm)
-	 * script in Kpathsea package
-	 * 
-	 * @param command
-	 *            The command to execute
-	 * @return
-	 */
-	// private IResult executeKpathseaScript(String command) {
-	// if (command.startsWith("mktexfmt"))
-	// return makeFMT(command.substring("mktexfmt".length()).trim());
-	// else if (command.startsWith("mktexpk"))
-	// return makePK(command);
-	// else if (command.startsWith("mktextfm"))
-	// return makeTFM(command.substring("mktextfm".length()).trim());
-	// else if (command.startsWith("mktexmf"))
-	// return makeMF(command.substring("mktexmf".length()).trim());
-	// else
-	// return null; // should it be a new BaseResult
-	// }
+	
+	@Override
+	public Task getResolution() {
+		Task t = super.getResolution();
+		if (t != null)
+			return t;
+		if (kpse_command.startsWith("mktexfmt"))
+			return new MakeFMT(kpse_command.substring("mktexfmt".length())
+					.trim());
+		else if (kpse_command.startsWith("mktexpk"))
+			return new MakePK(kpse_command);
+		else if (kpse_command.startsWith("mktextfm"))
+			return new MakeTFM(kpse_command.substring("mktextfm".length())
+					.trim());
+		else if (kpse_command.startsWith("mktexmf"))
+			return new MakeMF(kpse_command.substring("mktexmf".length()).trim());
+		else
+			return null;
+	}
 
 }

@@ -1,5 +1,8 @@
 package lah.tex.exceptions;
 
+import lah.tex.Task;
+import lah.tex.manage.InstallationTask;
+
 /**
  * This exception should be raised when the some core file (xz, busybox, cp,
  * tar, rm, ...) is missing.
@@ -7,7 +10,7 @@ package lah.tex.exceptions;
  * @author L.A.H.
  * 
  */
-public class SystemFileNotFoundException extends Exception {
+public class SystemFileNotFoundException extends ResolvableException {
 
 	private static final long serialVersionUID = 1L;
 
@@ -24,6 +27,11 @@ public class SystemFileNotFoundException extends Exception {
 
 	public String getMissingSystemFile() {
 		return missing_system_file;
+	}
+
+	@Override
+	public Task getResolution() {
+		return new InstallationTask(new String[] { getMissingSystemFile() });
 	}
 
 }

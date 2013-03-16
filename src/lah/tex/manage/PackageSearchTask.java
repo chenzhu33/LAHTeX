@@ -20,6 +20,11 @@ public class PackageSearchTask extends Task {
 		this.query = query;
 	}
 
+	@Override
+	public String getDescription() {
+		return "Search for " + query;
+	}
+
 	public String[] getResult() {
 		return result;
 	}

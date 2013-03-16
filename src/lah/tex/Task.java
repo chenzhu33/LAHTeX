@@ -3,11 +3,7 @@ package lah.tex;
 import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.process.TimedShell;
-import lah.tex.exceptions.KpathseaException;
-import lah.tex.exceptions.SystemFileNotFoundException;
-import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.interfaces.IEnvironment;
-import lah.tex.manage.InstallationTask;
 
 /**
  * Base class for a LAHTeX task.
@@ -36,15 +32,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		state = STATE_PENDING;
 	}
 
-	public boolean canResolve(Exception e) {
-		return e != null
-				&& (e instanceof KpathseaException
-						|| e instanceof SystemFileNotFoundException || e instanceof TeXMFFileNotFoundException);
-	}
-
-	public String getDescription() {
-		return null;
-	}
+	public abstract String getDescription();
 
 	@Override
 	public Exception getException() {
@@ -55,7 +43,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return num_exceptions_resolved;
 	}
 
-	public String getStatus() {
+	public String getStatusString() {
 		switch (state) {
 		case STATE_PENDING:
 			return "Pending";
@@ -97,26 +85,12 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		num_exceptions_resolved = 0;
 	}
 
-	public Task resolve() {
-		if (exception instanceof SystemFileNotFoundException) {
-			return new InstallationTask(
-					new String[] { ((SystemFileNotFoundException) exception)
-							.getMissingSystemFile() });
-		} else if (exception instanceof TeXMFFileNotFoundException
-				&& ((TeXMFFileNotFoundException) exception).getMissingPackage() != null) {
-			return new InstallationTask(
-					((TeXMFFileNotFoundException) exception)
-							.getMissingPackage());
-		} else
-			return null;
-	}
-
-	public void setException(Exception exception) {
+	protected void setException(Exception exception) {
 		this.exception = exception;
 		this.state = STATE_COMPLETE;
 	}
 
-	public void setState(int state) {
+	protected void setState(int state) {
 		this.state = state;
 	}
 

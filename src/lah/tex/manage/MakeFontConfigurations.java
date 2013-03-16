@@ -9,8 +9,12 @@ import lah.tex.Task;
 public class MakeFontConfigurations extends Task {
 
 	@Override
+	public String getDescription() {
+		return "Generate fontconfig configuration and cache";
+	}
+
+	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		// Prepare the font configuration file (if necessary)
 		File configfile = new File(environment.getTeXMFRootDirectory()
 				+ "/texmf-var/fonts/conf/fonts.conf");

@@ -175,12 +175,12 @@ public class InstallationTask extends Task implements IInstallationResult {
 	}
 
 	@Override
-	public String getStatus() {
+	public String getStatusString() {
 		if (state == STATE_EXECUTING)
 			return pending_packages == null ? "Computing dependency"
 					: (num_success_packages + "/" + pending_packages.length + " packages installed");
 		else
-			return super.getStatus();
+			return super.getStatusString();
 	}
 
 	private void installSystemFile(String file_name, IFileSupplier file_supplier) {

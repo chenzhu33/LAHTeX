@@ -48,6 +48,11 @@ public class MakeLanguageConfigurations extends Task {
 				new String[language_dat_map.size()]);
 	}
 
+	@Override
+	public String getDescription() {
+		return "Generate language configurations";
+	}
+
 	public void makeLanguageConfiguration(String[] languages) throws Exception {
 
 	}
