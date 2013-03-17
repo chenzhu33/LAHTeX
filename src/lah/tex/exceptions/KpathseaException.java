@@ -20,23 +20,23 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 
 	public KpathseaException(String kpathsea_command) {
 		kpse_command = kpathsea_command.trim();
-		String name = kpse_command.substring(kpse_command.lastIndexOf(' '))
-				.trim();
+		String base_name = kpse_command
+				.substring(kpse_command.lastIndexOf(' ')).trim();
 		if (kpse_command.startsWith("mktextfm"))
-			missing_file = name + ".tfm";
+			missing_file = base_name + ".tfm";
 		else if (kpse_command.startsWith("mktexmf"))
-			missing_file = name + ".mf";
+			missing_file = base_name + ".mf";
 		else if (kpse_command.startsWith("mktexpk"))
-			missing_file = name + ".pk";
+			missing_file = base_name + ".pk";
 		else
 			// format file *.(fmt|base|mem)
-			missing_file = name;
+			missing_file = base_name;
 	}
 
 	public String getCommand() {
 		return kpse_command;
 	}
-	
+
 	@Override
 	public Task getResolution() {
 		Task t = super.getResolution();

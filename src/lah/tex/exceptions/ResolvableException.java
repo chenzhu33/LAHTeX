@@ -19,6 +19,6 @@ public abstract class ResolvableException extends Exception {
 	 *         (raised via some other task); return {@code null} if there is no
 	 *         feasible resolution.
 	 */
-	public abstract Task getResolution();
+	public abstract Task getResolution() throws Exception;
 
 }

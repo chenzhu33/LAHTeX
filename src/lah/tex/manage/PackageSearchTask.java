@@ -1,62 +1,68 @@
 package lah.tex.manage;
 
 import java.util.LinkedList;
-import java.util.regex.Pattern;
 
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
 
 public class PackageSearchTask extends Task {
 
-	private static String index;
+	/**
+	 * The content of the text file "index", each line is of format
+	 * {@code [package_name]/[file_1]/[file_2]/.../[file_n]/} where
+	 * {@code [file_1], [file_2], ..., [file_n]} are all files contained in a
+	 * package with name {@code [package_name]}.
+	 */
+	private static String package_file_index;
 
-	private String query;
+	protected String file_query;
 
-	private String[] result;
+	protected String[] search_result;
 
-	final Pattern single_dot_pattern = Pattern.compile("\\.");
+	protected PackageSearchTask() {
+	}
 
-	public PackageSearchTask(String query) {
-		this.query = query;
+	public PackageSearchTask(String file_query) {
+		this.file_query = file_query;
 	}
 
 	@Override
 	public String getDescription() {
-		return "Search for " + query;
+		return "Search for package containing " + file_query;
 	}
 
-	public String[] getResult() {
-		return result;
-	}
-
-	private void loadIndex() throws Exception {
-		if (index == null)
-			index = Streams.readTextFile(environment.getPackageIndexFile());
+	public String[] getSearchResult() {
+		return search_result;
 	}
 
 	@Override
 	public void run() {
 		try {
-			loadIndex();
+			if (package_file_index == null) {
+				String temp_index = Streams.readTextFile(environment
+						.getPackageIndexFile());
+				package_file_index = temp_index;
+			}
+			LinkedList<String> res = new LinkedList<String>();
+			int k = 0;
+			file_query = "/" + file_query + "/";
+			while ((k = package_file_index.indexOf(file_query, k)) >= 0) {
+				int j = k;
+				while (j >= 0 && package_file_index.charAt(j) != '\n')
+					j--;
+				j++;
+				int i = j;
+				while (package_file_index.charAt(i) != '/')
+					i++;
+				k++;
+				res.add(package_file_index.substring(j, i));
+			}
+			search_result = res.size() > 0 ? res
+					.toArray(new String[res.size()]) : null;
 		} catch (Exception e) {
 			setException(e);
 			return;
 		}
-		LinkedList<String> res = new LinkedList<String>();
-		int k = 0;
-		query = "/" + query + "/";
-		while ((k = index.indexOf(query, k)) >= 0) {
-			int j = k;
-			while (j >= 0 && index.charAt(j) != '\n')
-				j--;
-			j++;
-			int i = j;
-			while (index.charAt(i) != '/')
-				i++;
-			k++;
-			res.add(index.substring(j, i));
-		}
-		result = res.size() > 0 ? res.toArray(new String[res.size()]) : null;
 	}
 
 }

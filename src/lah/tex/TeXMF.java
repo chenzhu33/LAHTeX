@@ -7,6 +7,7 @@ import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.compile.CompilationTask;
+import lah.tex.exceptions.ExceptionResolutionTask;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.manage.InstallationTask;
 import lah.tex.manage.MakeFontConfigurations;
@@ -20,8 +21,32 @@ import lah.tex.manage.MakeLanguageConfigurations;
  */
 public class TeXMF extends TaskManager<Task> {
 
-	public static final int TASK_COMPILE = 0, TASK_INSTALL_PACKAGE = 1,
-			TASK_MAKE_FONTCONFIG = 2, TASK_MAKE_LANGUAGES_CONFIG = 3;
+	public static enum TaskType {
+		/**
+		 * Compile a document
+		 */
+		TASK_COMPILE,
+		/**
+		 * Install a package
+		 */
+		TASK_INSTALL_PACKAGE,
+		/**
+		 * Generate fontconfig's configuration files and cache
+		 */
+		TASK_MAKE_FONTCONFIG,
+		/**
+		 * Generate language configurations (hyphenation patterns)
+		 */
+		TASK_MAKE_LANGUAGES_CONFIG,
+		/**
+		 * Do not execute anything
+		 */
+		TASK_NULL,
+		/**
+		 * Resolve an exception of an existing task
+		 */
+		TASK_RESOLVE_EXCEPTION;
+	}
 
 	private static TeXMF texmf_instance;
 
@@ -35,10 +60,12 @@ public class TeXMF extends TaskManager<Task> {
 	private TeXMF(IEnvironment environment, IFileSupplier file_supplier) {
 		Task.environment = environment;
 		Task.file_supplier = file_supplier;
+		Task.manager = this;
 		Task.shell = new TimedShell();
 
 		// Set up environment variables such as PATH, TMPDIR, FONTCONFIG
 		// (for XeTeX to work) and OSFONTDIR (for LuaTeX font search)
+		// TODO set TEXMFCNF to the search locations of texmf.cnf as well
 		String path = environment.getTeXMFBinaryDirectory() + ":"
 				+ System.getenv("PATH");
 		String tmpdir = environment.getTeXMFRootDirectory() + "/texmf-var/tmp";
@@ -56,10 +83,13 @@ public class TeXMF extends TaskManager<Task> {
 	 * Create a new task and submit for scheduled execution
 	 * 
 	 * @param task_type
+	 *            One of {@link TaskType} enumeration
 	 * @param args
-	 * @return the created task
+	 *            A list of Strings as additional argument, interpretation
+	 *            depending on the task type
+	 * @return A new {@link Task} created, added for scheduling
 	 */
-	public Task createTask(int task_type, String[] args) {
+	public Task createTask(TaskType task_type, String[] args) {
 		System.out.println("Create task "
 				+ Collections.stringOfArray(args, ", ", "[", "]"));
 		Task result_task;
@@ -75,6 +105,13 @@ public class TeXMF extends TaskManager<Task> {
 			break;
 		case TASK_MAKE_LANGUAGES_CONFIG:
 			result_task = new MakeLanguageConfigurations(args);
+			break;
+		case TASK_RESOLVE_EXCEPTION:
+			if (args != null)
+				result_task = new ExceptionResolutionTask(
+						getTaskWithId(Integer.parseInt(args[0])));
+			else
+				result_task = null;
 			break;
 		default:
 			result_task = null;

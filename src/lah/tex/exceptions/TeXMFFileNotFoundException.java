@@ -1,8 +1,8 @@
 package lah.tex.exceptions;
 
-import lah.spectre.Collections;
 import lah.tex.Task;
 import lah.tex.manage.InstallationTask;
+import lah.tex.manage.PackageSearchTask;
 
 public class TeXMFFileNotFoundException extends ResolvableException {
 
@@ -10,72 +10,47 @@ public class TeXMFFileNotFoundException extends ResolvableException {
 
 	protected String missing_file;
 
-	protected String[] missing_package;
-
-	TeXMFFileNotFoundException() {
+	protected TeXMFFileNotFoundException() {
 	}
 
 	public TeXMFFileNotFoundException(String missing_file,
 			String default_file_extension) {
-		this.missing_file = missing_file
-				+ (missing_file.indexOf('.') < 0
-						&& default_file_extension != null ? "."
-						+ default_file_extension : "");
-		if (missing_file.equals("language.dat")
-				|| missing_file.equals("language.def"))
-			missing_package = new String[] { "hyphen-base" };
+		if (missing_file.indexOf('.') < 0 && default_file_extension != null)
+			this.missing_file = missing_file + "." + default_file_extension;
+		else
+			this.missing_file = missing_file;
 	}
 
 	@Override
 	public String getMessage() {
-		return "Missing "
-				+ missing_file
-				+ (missing_package != null ? ". Probably the package"
-						+ (missing_package.length > 1 ? "s " : " ")
-						+ Collections.stringOfArray(missing_package, ", ",
-								null, null)
-						+ (missing_package.length > 1 ? " are " : " is ")
-						+ "missing or not properly installed." : "");
-	}
-
-	public String getMissingFile() {
-		return missing_file;
-	}
-
-	public String[] getMissingPackage() {
-		return missing_package;
-	}
-
-	public String getMissingPackageForFile(String file_name) {
-		if (file_name.equals("mf"))
-			return "metafont";
-		else if (file_name.equals("gftopk"))
-			return "mfware";
-		else if (file_name.equals("texmf.cnf"))
-			return "kpathsea";
-		else
-			return file_name;
-	}
-
-	public void identifyMissingPackage() {
-		if (missing_file.equals("mf"))
-			missing_package = new String[] { "metafont" };
-		else if (missing_file.equals("gftopk"))
-			missing_package = new String[] { "mfware" };
-		else if (missing_file.equals("texmf.cnf"))
-			missing_package = new String[] { "kpathsea" };
-		else if (!missing_file.contains("."))
-			missing_package = new String[] { missing_file };
-		else
-			missing_package = null;
-		// missing_package = seeker.seekFile(getMissingFile());
+		return "Missing " + missing_file;
 	}
 
 	@Override
 	public Task getResolution() {
-		if (getMissingPackage() != null)
-			return new InstallationTask(getMissingPackage());
-		return null;
+		String[] missing_packages;
+		if (missing_file.equals("language.dat")
+				|| missing_file.equals("language.def"))
+			missing_packages = new String[] { "hyphen-base" };
+		else if (missing_file.equals("mf"))
+			missing_packages = new String[] { "metafont" };
+		else if (missing_file.equals("gftopk"))
+			missing_packages = new String[] { "mfware" };
+		else if (missing_file.equals("texmf.cnf"))
+			missing_packages = new String[] { "kpathsea" };
+		else if (!missing_file.contains("."))
+			// engines like tex, pdftex, etc
+			missing_packages = new String[] { missing_file };
+		else {
+			// other input files
+			PackageSearchTask task = new PackageSearchTask(missing_file);
+			task.run();
+			if (task.hasException())
+				missing_packages = null;
+			else
+				missing_packages = task.getSearchResult();
+		}
+		return (missing_packages == null) ? null : new InstallationTask(
+				missing_packages);
 	}
-
 }

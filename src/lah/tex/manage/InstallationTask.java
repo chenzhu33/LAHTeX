@@ -176,7 +176,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public String getStatusString() {
-		if (state == STATE_EXECUTING)
+		if (state == State.STATE_EXECUTING)
 			return pending_packages == null ? "Computing dependency"
 					: (num_success_packages + "/" + pending_packages.length + " packages installed");
 		else
@@ -298,7 +298,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public void run() {
-		setState(STATE_EXECUTING);
+		setState(State.STATE_EXECUTING);
 		// copy xz, busybox, ... to private directory
 		if (packages.length == 1 && packages[0].startsWith("/")) {
 			installSystemFile(packages[0].substring(1), file_supplier);
@@ -382,7 +382,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 		} catch (Exception e) {
 			setException(e);
 		} finally {
-			setState(STATE_COMPLETE);
+			setState(State.STATE_COMPLETE);
 		}
 	}
 

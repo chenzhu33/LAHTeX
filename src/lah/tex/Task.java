@@ -2,6 +2,7 @@ package lah.tex;
 
 import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.interfaces.IResult;
+import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.interfaces.IEnvironment;
 
@@ -13,23 +14,37 @@ import lah.tex.interfaces.IEnvironment;
  */
 public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
+	public static enum State {
+		/**
+		 * Task is already completed
+		 */
+		STATE_COMPLETE,
+		/**
+		 * Task is executing i.e. run() is executed
+		 */
+		STATE_EXECUTING,
+		/**
+		 * Task is waiting for execution
+		 */
+		STATE_PENDING;
+	}
+
 	protected static IEnvironment environment;
 
 	protected static IFileSupplier file_supplier;
 
-	protected static TimedShell shell;
+	protected static TaskManager<Task> manager;
 
-	public static final int STATE_PENDING = 0, STATE_EXECUTING = 1,
-			STATE_COMPLETE = 2;
+	protected static TimedShell shell;
 
 	protected Exception exception;
 
 	private int num_exceptions_resolved;
 
-	protected int state;
+	protected State state;
 
 	protected Task() {
-		state = STATE_PENDING;
+		state = State.STATE_PENDING;
 	}
 
 	public abstract String getDescription();
@@ -65,7 +80,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	@Override
 	public boolean isComplete() {
-		return state == STATE_COMPLETE;
+		return state == State.STATE_COMPLETE;
 	}
 
 	@Override
@@ -87,10 +102,10 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected void setException(Exception exception) {
 		this.exception = exception;
-		this.state = STATE_COMPLETE;
+		this.state = State.STATE_COMPLETE;
 	}
 
-	protected void setState(int state) {
+	protected void setState(State state) {
 		this.state = state;
 	}
 

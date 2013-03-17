@@ -238,11 +238,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 	// }
 	// }
 
-	@Override
-	public boolean isComplete() {
-		return state == STATE_COMPLETE;
-	}
-
 	/**
 	 * Generate configuration file texmf.cnf in the TeX binary directory
 	 * reflecting the installation
@@ -334,12 +329,12 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	public void reset() {
 		output_buffer.delete(0, output_buffer.length());
-		setState(STATE_PENDING);
+		setState(State.STATE_PENDING);
 	}
 
 	@Override
 	public void run() {
-		setState(STATE_EXECUTING);
+		setState(State.STATE_EXECUTING);
 		reset();
 		File tex_src_file = new File(tex_src);
 		if (tex_src_file.exists()) {
@@ -348,7 +343,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 			timeout = timeout <= 0 ? default_compilation_timeout : timeout;
 			try {
 				shell.fork(command, dir, null, this, timeout);
-				setState(STATE_COMPLETE);
+				setState(State.STATE_COMPLETE);
 			} catch (Exception e) {
 				setException(e);
 			}
