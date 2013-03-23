@@ -60,7 +60,6 @@ public class TeXMF extends TaskManager<Task> {
 		Task.manager = this;
 		Task.shell = new TimedShell();
 		Task.make_lsr_task = new MakeLSR();
-		Task.make_lang_config_task = new MakeLanguageConfigurations(null);
 
 		// Set up environment variables such as PATH, TMPDIR, FONTCONFIG
 		// (for XeTeX to work) and OSFONTDIR (for LuaTeX font search)
@@ -117,12 +116,20 @@ public class TeXMF extends TaskManager<Task> {
 		return null;
 	}
 
+	public void resetAndAdd(Task task) {
+		task.reset();
+		add(task);
+	}
+
 	public void resolve(Task task) {
 		if (task != null && task.hasException()
 				&& task.exception instanceof SolvableException
 				&& ((SolvableException) task.exception).hasSolution()) {
 			add(((SolvableException) task.exception).getSolution());
+			task.reset();
 			// re-queue task for retry
+			// TODO set dependency: only start when the solution task completes
+			resetAndAdd(task);
 		}
 	}
 

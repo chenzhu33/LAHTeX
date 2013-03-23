@@ -55,7 +55,7 @@ public class MakeLSR extends Task {
 				final FileOutputStream stream = new FileOutputStream(
 						temp_lsRfile, true);
 				shell.fork(new String[] { environment.getLS(), "-R", "." },
-						texmf_dir, new StreamRedirector(stream), 600000);
+						texmf_dir, new StreamRedirector(stream), 6000000);
 				stream.close();
 			} catch (Exception e) {
 				setException(e);

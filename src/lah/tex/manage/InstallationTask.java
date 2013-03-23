@@ -185,6 +185,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 		// String[] commands = { "cp", "ls", "tar", "chmod", "rm" };
 		// InstallationTask result = new InstallationTask();
 		try {
+			setState(State.STATE_EXECUTING);
 			// Create necessary symbolic links for system commands
 			if (file_name.equals("cp") || file_name.equals("ls")
 					|| file_name.equals("tar") || file_name.equals("chmod")
@@ -221,6 +222,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 					df.delete();
 				}
 			}
+			setState(State.STATE_COMPLETE);
 		} catch (Exception e) {
 			setException(e);
 			return;
@@ -373,6 +375,10 @@ public class InstallationTask extends Task implements IInstallationResult {
 		try {
 			relocate(); // relocate the files to the TeX directory structures
 			make_lsr_task.run(); // and also regenerate ls-R files
+			if (make_lsr_task.hasException()) {
+				setException(make_lsr_task.getException());
+				return;
+			}
 			if (has_lualibs)
 				fixLualibsFile();
 		} catch (Exception e) {

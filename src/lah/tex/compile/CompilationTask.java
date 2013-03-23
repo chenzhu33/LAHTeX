@@ -47,7 +47,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 	/**
 	 * Default time out for compilation; set to 600000 milisec (i.e. 10 minutes)
 	 */
-	private static final int default_compilation_timeout = 600000;
+	protected static final int default_compilation_timeout = 600000;
 
 	// static private Pattern[] other_issue_patterns = {
 	// Pattern.compile("! (.*)"),
@@ -320,7 +320,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 				chmodAllEngines();
 				File program_file = new File(
 						environment.getTeXMFBinaryDirectory() + "/"
-								+ tex_engine);
+								+ command[0]);
 				if (program_file.exists()) {
 					makeTEXMFCNF();
 				} else {

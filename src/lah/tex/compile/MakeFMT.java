@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lah.tex.manage.MakeLanguageConfigurations;
+
 public class MakeFMT extends CompilationTask {
 
 	/**
@@ -12,14 +14,16 @@ public class MakeFMT extends CompilationTask {
 	private static final Pattern format_pattern = Pattern
 			.compile("([a-z]*)\\.(fmt|base|mem)");
 
+	private static MakeLanguageConfigurations make_lang_config_task;
+
 	/**
 	 * The format file to make must be of form *.fmt for TeX format, *.base for
 	 * MetaFont format, *.mem for MetaPost format
 	 */
-	// private String format;
+	private String format;
 
 	public MakeFMT(String format) {
-		// this.format = format;
+		this.format = format;
 		Matcher format_matcher = format_pattern.matcher(format);
 		if (!format_matcher.find())
 			return;
@@ -58,9 +62,15 @@ public class MakeFMT extends CompilationTask {
 	}
 
 	@Override
+	public String getDescription() {
+		return "Make format " + format;
+	}
+
+	@Override
 	public void run() {
 		try {
 			setState(State.STATE_EXECUTING);
+
 			// Prepare the default language files if they do not exist
 			// Regenerate path database to make sure that necessary input
 			// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
@@ -70,7 +80,13 @@ public class MakeFMT extends CompilationTask {
 					|| !new File(environment.getTeXMFRootDirectory()
 							+ "/texmf-var/tex/generic/config/language.def")
 							.exists()) {
+				if (make_lang_config_task == null)
+					make_lang_config_task = new MakeLanguageConfigurations(null);
 				make_lang_config_task.run();
+				if (make_lang_config_task.hasException()) {
+					setException(make_lang_config_task.getException());
+					return;
+				}
 			}
 
 			// Location of the memory dump file
@@ -78,9 +94,13 @@ public class MakeFMT extends CompilationTask {
 					+ "/texmf-var/web2c/" + tex_engine);
 			if (!fmt_loc.exists())
 				fmt_loc.mkdirs();
+
 			// Now create and run the process to generate the format file
-			shell.fork(command, fmt_loc);
+			shell.fork(command, fmt_loc, this, default_compilation_timeout);
 			make_lsr_task.run();
+			// ls might not be available
+			if (make_lsr_task.hasException())
+				setException(make_lsr_task.getException());
 			setState(State.STATE_COMPLETE);
 		} catch (Exception e) {
 			setException(e);
