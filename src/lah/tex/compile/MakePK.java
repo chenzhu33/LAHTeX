@@ -74,6 +74,7 @@ public class MakePK extends CompilationTask {
 		try {
 			shell.fork(new String[] { "mf", arg }, pk_loc);
 			shell.fork(new String[] { "gftopk", gf_name, pk_name }, pk_loc);
+			make_lsr_task.run();
 		} catch (Exception e) {
 			setException(e);
 			return;

@@ -12,8 +12,6 @@ public abstract class SolvableException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
-	public abstract void identifySolution() throws Exception;
-
 	/**
 	 * Get a task to resolve this exception
 	 * 
@@ -21,8 +19,10 @@ public abstract class SolvableException extends Exception {
 	 *         (raised via some other task); return {@code null} if there is no
 	 *         feasible resolution.
 	 */
-	public abstract Task getSolution() throws Exception;
+	public abstract Task getSolution();
 
 	public abstract boolean hasSolution();
+
+	public abstract void identifySolution() throws Exception;
 
 }

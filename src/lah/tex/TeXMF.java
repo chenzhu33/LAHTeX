@@ -7,10 +7,11 @@ import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.compile.CompilationTask;
-import lah.tex.exceptions.ExceptionFixingTask;
+import lah.tex.exceptions.SolvableException;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.manage.InstallationTask;
 import lah.tex.manage.MakeFontConfigurations;
+import lah.tex.manage.MakeLSR;
 import lah.tex.manage.MakeLanguageConfigurations;
 
 /**
@@ -58,6 +59,8 @@ public class TeXMF extends TaskManager<Task> {
 		Task.file_supplier = file_supplier;
 		Task.manager = this;
 		Task.shell = new TimedShell();
+		Task.make_lsr_task = new MakeLSR();
+		Task.make_lang_config_task = new MakeLanguageConfigurations(null);
 
 		// Set up environment variables such as PATH, TMPDIR, FONTCONFIG
 		// (for XeTeX to work) and OSFONTDIR (for LuaTeX font search)
@@ -115,8 +118,10 @@ public class TeXMF extends TaskManager<Task> {
 	}
 
 	public void resolve(Task task) {
-		if (task != null) {
-			add(new ExceptionFixingTask(task));
+		if (task != null && task.hasException()
+				&& task.exception instanceof SolvableException
+				&& ((SolvableException) task.exception).hasSolution()) {
+			add(((SolvableException) task.exception).getSolution());
 			// re-queue task for retry
 		}
 	}

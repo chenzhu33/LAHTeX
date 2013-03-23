@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lah.spectre.Collections;
 import lah.spectre.FileName;
 import lah.spectre.stream.IBufferProcessor;
 import lah.tex.Task;
@@ -72,7 +73,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 			lineNumberMatcher = lineNumberPattern.matcher(""),
 			warningMatcher = warningPattern.matcher("");
 
-	private String[] command;
+	protected String[] command;
 
 	protected String default_file_extension = "tex";
 
@@ -94,9 +95,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
 			.matcher("");
 
-	private String tex_engine;
-
-	private File tex_src_file;
+	protected String tex_engine;
 
 	private final Matcher[] tex_missing_file_matchers = {
 			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*")
@@ -111,6 +110,8 @@ public class CompilationTask extends Task implements ICompilationResult,
 			Pattern.compile(
 					"! OOPS! I can't find any hyphenation patterns for US english.")
 					.matcher(""), };
+
+	private File tex_src_file;
 
 	protected long timeout;
 
@@ -172,7 +173,12 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	@Override
 	public String getDescription() {
-		return tex_engine + " " + tex_src_file.getName();
+		if (tex_src_file != null)
+			return tex_engine + " " + tex_src_file.getName();
+		else if (command != null)
+			return Collections.stringOfArray(command, " ", null, null);
+		else
+			return null;
 	}
 
 	@Override

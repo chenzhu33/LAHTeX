@@ -9,6 +9,8 @@ import lah.spectre.process.TimedShell;
 import lah.spectre.stream.Streams;
 import lah.tex.exceptions.SolvableException;
 import lah.tex.interfaces.IEnvironment;
+import lah.tex.manage.MakeLSR;
+import lah.tex.manage.MakeLanguageConfigurations;
 
 /**
  * Base class for a LAHTeX task.
@@ -38,6 +40,10 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected static IFileSupplier file_supplier;
 
 	protected static TaskManager<Task> manager;
+	
+	protected static MakeLSR make_lsr_task;
+	
+	protected static MakeLanguageConfigurations make_lang_config_task;
 
 	/**
 	 * The content of the text file "index", each line is of format

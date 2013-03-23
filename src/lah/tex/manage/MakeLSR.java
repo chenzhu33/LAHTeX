@@ -9,7 +9,16 @@ import lah.tex.Task;
 
 public class MakeLSR extends Task {
 
+	/**
+	 * Magic header of ls-R files
+	 */
 	private static final String lsR_magic = "% ls-R -- filename database for kpathsea; do not change this line.\n";
+
+	/**
+	 * The directories under tex_root to generate ls-R are
+	 */
+	private static final String[] texmf_dirs = { "texmf", "texmf-dist",
+			"texmf-var" };
 
 	@Override
 	public String getDescription() {
@@ -18,12 +27,10 @@ public class MakeLSR extends Task {
 
 	@Override
 	public void run() {
-		// The directories under tex_root to generate ls-R are:
-		final String[] texmfdir_names = { "texmf", "texmf-dist", "texmf-var" };
 
-		for (int i = 0; i < texmfdir_names.length; i++) {
+		for (int i = 0; i < texmf_dirs.length; i++) {
 			File texmf_dir = new File(environment.getTeXMFRootDirectory() + "/"
-					+ texmfdir_names[i]);
+					+ texmf_dirs[i]);
 
 			// Skip non-existing texmf directory, is not a directory or
 			// cannot read/write/execute: skip it

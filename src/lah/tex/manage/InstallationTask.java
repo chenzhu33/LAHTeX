@@ -2,7 +2,6 @@ package lah.tex.manage;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
@@ -58,9 +57,6 @@ public class InstallationTask extends Task implements IInstallationResult {
 	 * Modify the list of packages to contain all dependent packages as well.
 	 * 
 	 * @param pkgs
-	 * @throws FileNotFoundException
-	 * @throws SystemFileNotFoundException
-	 * @throws PackageDBNotReadyException
 	 */
 	private String[] addAllDependentPackages(String[] pkgs) throws Exception {
 		// Queue containing the packages whose dependencies are to be added
@@ -376,7 +372,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 		// Post download and extract packages
 		try {
 			relocate(); // relocate the files to the TeX directory structures
-			// makeLSR(null); // and also regenerate ls-R files
+			make_lsr_task.run(); // and also regenerate ls-R files
 			if (has_lualibs)
 				fixLualibsFile();
 		} catch (Exception e) {

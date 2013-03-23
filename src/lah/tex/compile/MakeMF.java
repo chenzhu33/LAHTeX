@@ -108,7 +108,7 @@ public class MakeMF extends Task {
 					+ ".mf");
 			mf_output.write(mf_content[match]);
 			mf_output.close();
-			// installer.makeLSR(null);
+			make_lsr_task.run();
 		} catch (Exception e) {
 			setException(e);
 			return;

@@ -22,6 +22,7 @@ public class MakeTFM extends CompilationTask {
 		setDefaultFileExtension("mf");
 		try {
 			shell.fork(new String[] { "mf", arg }, tfm_loc);
+			make_lsr_task.run();
 		} catch (Exception e) {
 			setException(e);
 			return;

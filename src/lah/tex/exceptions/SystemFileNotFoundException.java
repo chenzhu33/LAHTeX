@@ -21,10 +21,6 @@ public class SystemFileNotFoundException extends SolvableException {
 	}
 
 	@Override
-	public void identifySolution() {
-	}
-
-	@Override
 	public String getMessage() {
 		return "Missing system file " + missing_system_file;
 	}
@@ -41,6 +37,10 @@ public class SystemFileNotFoundException extends SolvableException {
 	@Override
 	public boolean hasSolution() {
 		return true;
+	}
+
+	@Override
+	public void identifySolution() {
 	}
 
 }

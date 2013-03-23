@@ -24,6 +24,27 @@ public class TeXMFFileNotFoundException extends SolvableException {
 	}
 
 	@Override
+	public String getMessage() {
+		return "Missing "
+				+ missing_file
+				+ (missing_packages != null ? ". Probably package "
+						+ Collections.stringOfArray(missing_packages, ", ",
+								null, null) + " is not installed/corrupted."
+						: "");
+	}
+
+	@Override
+	public Task getSolution() {
+		return (missing_packages == null) ? null : new InstallationTask(
+				missing_packages);
+	}
+
+	@Override
+	public boolean hasSolution() {
+		return missing_packages != null;
+	}
+
+	@Override
 	public void identifySolution() throws Exception {
 		if (missing_file.equals("language.dat")
 				|| missing_file.equals("language.def"))
@@ -42,27 +63,6 @@ public class TeXMFFileNotFoundException extends SolvableException {
 		else
 			// other input files
 			missing_packages = Task.findPackagesWithFile(missing_file);
-	}
-
-	@Override
-	public String getMessage() {
-		return "Missing "
-				+ missing_file
-				+ (missing_packages != null ? ". Probably package "
-						+ Collections.stringOfArray(missing_packages, ", ",
-								null, null) + " is not installed/corrupted."
-						: "");
-	}
-
-	@Override
-	public Task getSolution() throws Exception {
-		return (missing_packages == null) ? null : new InstallationTask(
-				missing_packages);
-	}
-
-	@Override
-	public boolean hasSolution() {
-		return missing_packages != null;
 	}
 
 }
