@@ -38,22 +38,35 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	}
 
 	@Override
-	public Task getResolution() {
-		Task t = super.getResolution();
-		if (t != null)
-			return t;
+	public Task getSolution() throws Exception {
 		if (kpse_command.startsWith("mktexfmt"))
 			return new MakeFMT(kpse_command.substring("mktexfmt".length())
 					.trim());
 		else if (kpse_command.startsWith("mktexpk"))
 			return new MakePK(kpse_command);
-		else if (kpse_command.startsWith("mktextfm"))
-			return new MakeTFM(kpse_command.substring("mktextfm".length())
-					.trim());
-		else if (kpse_command.startsWith("mktexmf"))
-			return new MakeMF(kpse_command.substring("mktexmf".length()).trim());
-		else
-			return null;
+		else {
+			Task t = super.getSolution();
+			if (t != null)
+				return t;
+			if (kpse_command.startsWith("mktextfm"))
+				return new MakeTFM(kpse_command.substring("mktextfm".length())
+						.trim());
+			else if (kpse_command.startsWith("mktexmf"))
+				return new MakeMF(kpse_command.substring("mktexmf".length())
+						.trim());
+			else
+				return null;
+		}
 	}
+
+	@Override
+	public boolean hasSolution() {
+		return true;
+	}
+
+	// @Override
+	// public void checkForSolution() {
+	// // TODO Auto-generated method stub
+	// }
 
 }

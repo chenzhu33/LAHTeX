@@ -8,9 +8,11 @@ import lah.tex.Task;
  * @author L.A.H.
  * 
  */
-public abstract class ResolvableException extends Exception {
+public abstract class SolvableException extends Exception {
 
 	private static final long serialVersionUID = 1L;
+
+	public abstract void identifySolution() throws Exception;
 
 	/**
 	 * Get a task to resolve this exception
@@ -19,6 +21,8 @@ public abstract class ResolvableException extends Exception {
 	 *         (raised via some other task); return {@code null} if there is no
 	 *         feasible resolution.
 	 */
-	public abstract Task getResolution() throws Exception;
+	public abstract Task getSolution() throws Exception;
+
+	public abstract boolean hasSolution();
 
 }

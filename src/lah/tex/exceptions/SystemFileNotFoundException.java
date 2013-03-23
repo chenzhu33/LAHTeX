@@ -10,7 +10,7 @@ import lah.tex.manage.InstallationTask;
  * @author L.A.H.
  * 
  */
-public class SystemFileNotFoundException extends ResolvableException {
+public class SystemFileNotFoundException extends SolvableException {
 
 	private static final long serialVersionUID = 1L;
 
@@ -18,6 +18,10 @@ public class SystemFileNotFoundException extends ResolvableException {
 
 	public SystemFileNotFoundException(String file_name) {
 		missing_system_file = file_name;
+	}
+
+	@Override
+	public void identifySolution() {
 	}
 
 	@Override
@@ -30,8 +34,13 @@ public class SystemFileNotFoundException extends ResolvableException {
 	}
 
 	@Override
-	public Task getResolution() {
+	public Task getSolution() {
 		return new InstallationTask(new String[] { getMissingSystemFile() });
+	}
+
+	@Override
+	public boolean hasSolution() {
+		return true;
 	}
 
 }

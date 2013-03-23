@@ -1,14 +1,16 @@
 package lah.tex.exceptions;
 
+import lah.spectre.Collections;
 import lah.tex.Task;
 import lah.tex.manage.InstallationTask;
-import lah.tex.manage.PackageSearchTask;
 
-public class TeXMFFileNotFoundException extends ResolvableException {
+public class TeXMFFileNotFoundException extends SolvableException {
 
 	private static final long serialVersionUID = 1L;
 
 	protected String missing_file;
+
+	private String[] missing_packages;
 
 	protected TeXMFFileNotFoundException() {
 	}
@@ -22,35 +24,45 @@ public class TeXMFFileNotFoundException extends ResolvableException {
 	}
 
 	@Override
-	public String getMessage() {
-		return "Missing " + missing_file;
-	}
-
-	@Override
-	public Task getResolution() {
-		String[] missing_packages;
+	public void identifySolution() throws Exception {
 		if (missing_file.equals("language.dat")
 				|| missing_file.equals("language.def"))
+			// this case is necessary because we might require these files
+			// before the package index is available
 			missing_packages = new String[] { "hyphen-base" };
+		else if (missing_file.equals("texmf.cnf"))
+			missing_packages = new String[] { "kpathsea" };
 		else if (missing_file.equals("mf"))
 			missing_packages = new String[] { "metafont" };
 		else if (missing_file.equals("gftopk"))
 			missing_packages = new String[] { "mfware" };
-		else if (missing_file.equals("texmf.cnf"))
-			missing_packages = new String[] { "kpathsea" };
 		else if (!missing_file.contains("."))
 			// engines like tex, pdftex, etc
 			missing_packages = new String[] { missing_file };
-		else {
+		else
 			// other input files
-			PackageSearchTask task = new PackageSearchTask(missing_file);
-			task.run();
-			if (task.hasException())
-				missing_packages = null;
-			else
-				missing_packages = task.getSearchResult();
-		}
+			missing_packages = Task.findPackagesWithFile(missing_file);
+	}
+
+	@Override
+	public String getMessage() {
+		return "Missing "
+				+ missing_file
+				+ (missing_packages != null ? ". Probably package "
+						+ Collections.stringOfArray(missing_packages, ", ",
+								null, null) + " is not installed/corrupted."
+						: "");
+	}
+
+	@Override
+	public Task getSolution() throws Exception {
 		return (missing_packages == null) ? null : new InstallationTask(
 				missing_packages);
 	}
+
+	@Override
+	public boolean hasSolution() {
+		return missing_packages != null;
+	}
+
 }

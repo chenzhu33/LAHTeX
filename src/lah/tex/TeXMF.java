@@ -7,7 +7,7 @@ import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.compile.CompilationTask;
-import lah.tex.exceptions.ExceptionResolutionTask;
+import lah.tex.exceptions.ExceptionFixingTask;
 import lah.tex.interfaces.IEnvironment;
 import lah.tex.manage.InstallationTask;
 import lah.tex.manage.MakeFontConfigurations;
@@ -41,11 +41,7 @@ public class TeXMF extends TaskManager<Task> {
 		/**
 		 * Do not execute anything
 		 */
-		TASK_NULL,
-		/**
-		 * Resolve an exception of an existing task
-		 */
-		TASK_RESOLVE_EXCEPTION;
+		TASK_NULL
 	}
 
 	private static TeXMF texmf_instance;
@@ -106,13 +102,6 @@ public class TeXMF extends TaskManager<Task> {
 		case TASK_MAKE_LANGUAGES_CONFIG:
 			result_task = new MakeLanguageConfigurations(args);
 			break;
-		case TASK_RESOLVE_EXCEPTION:
-			if (args != null)
-				result_task = new ExceptionResolutionTask(
-						getTaskWithId(Integer.parseInt(args[0])));
-			else
-				result_task = null;
-			break;
 		default:
 			result_task = null;
 		}
@@ -123,6 +112,13 @@ public class TeXMF extends TaskManager<Task> {
 
 	public String[] getAllLanguages() throws Exception {
 		return null;
+	}
+
+	public void resolve(Task task) {
+		if (task != null) {
+			add(new ExceptionFixingTask(task));
+			// re-queue task for retry
+		}
 	}
 
 }

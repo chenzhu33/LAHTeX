@@ -2,11 +2,11 @@ package lah.tex.exceptions;
 
 import lah.tex.Task;
 
-public class ExceptionResolutionTask extends Task {
+public class ExceptionFixingTask extends Task {
 
 	private Task target_task;
 
-	public ExceptionResolutionTask(Task target_task) {
+	public ExceptionFixingTask(Task target_task) {
 		this.target_task = target_task;
 	}
 
@@ -18,11 +18,11 @@ public class ExceptionResolutionTask extends Task {
 	@Override
 	public void run() {
 		setState(State.STATE_EXECUTING);
-		if (target_task.getException() instanceof ResolvableException) {
-			ResolvableException exception = (ResolvableException) target_task
+		if (target_task.getException() instanceof SolvableException) {
+			SolvableException exception = (SolvableException) target_task
 					.getException();
 			try {
-				Task t = exception.getResolution();
+				Task t = exception.getSolution();
 				if (t != null)
 					t.run();
 			} catch (Exception e) {

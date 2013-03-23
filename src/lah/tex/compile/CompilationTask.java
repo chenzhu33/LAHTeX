@@ -27,6 +27,11 @@ import lah.tex.interfaces.ICompilationResult;
 public class CompilationTask extends Task implements ICompilationResult,
 		IBufferProcessor {
 
+	// Pattern for missing fonts, probably not necessary
+	// Pattern.compile("! Font \\\\[^=]*=([^\\s]*)\\s"),
+	// Pattern.compile("! Font [^\\n]*file\\:([^\\:\\n]*)\\:"),
+	// Pattern.compile("! Font \\\\[^/]*/([^/]*)/")
+
 	/**
 	 * Standard output patterns
 	 */
@@ -67,7 +72,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 			lineNumberMatcher = lineNumberPattern.matcher(""),
 			warningMatcher = warningPattern.matcher("");
 
-	private String[] command = null;
+	private String[] command;
 
 	protected String default_file_extension = "tex";
 
@@ -89,7 +94,9 @@ public class CompilationTask extends Task implements ICompilationResult,
 	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
 			.matcher("");
 
-	private String tex_engine, tex_src;
+	private String tex_engine;
+
+	private File tex_src_file;
 
 	private final Matcher[] tex_missing_file_matchers = {
 			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*")
@@ -115,9 +122,8 @@ public class CompilationTask extends Task implements ICompilationResult,
 
 	public CompilationTask(String tex_engine, String tex_src) {
 		this.tex_engine = tex_engine;
-		this.tex_src = tex_src;
-		File input_file = new File(tex_src);
-		String input_file_no_ext = FileName.removeFileExtension(input_file
+		this.tex_src_file = new File(tex_src);
+		String input_file_no_ext = FileName.removeFileExtension(tex_src_file
 				.getName());
 		if (tex_engine.equals("bibtex") || tex_engine.equals("makeindex"))
 			this.command = new String[] { tex_engine, input_file_no_ext };
@@ -126,7 +132,7 @@ public class CompilationTask extends Task implements ICompilationResult,
 					: tex_engine;
 			this.command = new String[] { getProgramFromFormat(tex_engine),
 					"-interaction=nonstopmode", "-fmt=" + tex_fmt,
-					input_file.getName() };
+					tex_src_file.getName() };
 		}
 	}
 
@@ -152,7 +158,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 	 *         {@literal false} otherwise
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unused")
 	private boolean chmodAllEngines() throws Exception {
 		File bindir = new File(environment.getTeXMFBinaryDirectory()
 				+ "/../../");
@@ -165,14 +170,9 @@ public class CompilationTask extends Task implements ICompilationResult,
 		return true;
 	}
 
-	// Pattern for missing fonts, probably not necessary
-	// Pattern.compile("! Font \\\\[^=]*=([^\\s]*)\\s"),
-	// Pattern.compile("! Font [^\\n]*file\\:([^\\:\\n]*)\\:"),
-	// Pattern.compile("! Font \\\\[^/]*/([^/]*)/")
-
 	@Override
 	public String getDescription() {
-		return tex_engine + " " + tex_src;
+		return tex_engine + " " + tex_src_file.getName();
 	}
 
 	@Override
@@ -210,33 +210,6 @@ public class CompilationTask extends Task implements ICompilationResult,
 			return "idx";
 		return null;
 	}
-
-	// /**
-	// * Get the absolute path to a TeX program, calling the object that resolve
-	// * the case when the binary is missing whenever necessary.
-	// *
-	// * @param program
-	// * @return full path to the program or {@literal null} if the program is
-	// not
-	// * installed and the listener cannot resolve it (for e.g., by
-	// * installing the containing package)
-	// * @throws Exception
-	// */
-	// String getTeXMFProgram(String program) throws Exception {
-	// chmodAllEngines();
-	// File program_file = program.startsWith("/") ? new File(program)
-	// : new File(environment.getTeXMFBinaryDirectory() + "/"
-	// + program);
-	// if (program_file.exists()) {
-	// makeTEXMFCNF();
-	// return program_file.getAbsolutePath();
-	// } else {
-	// TeXMFFileNotFoundException e = new TeXMFFileNotFoundException(
-	// program_file.getName(), null);
-	// // e.identifyMissingPackage(seeker);
-	// throw e;
-	// }
-	// }
 
 	/**
 	 * Generate configuration file texmf.cnf in the TeX binary directory
@@ -336,19 +309,31 @@ public class CompilationTask extends Task implements ICompilationResult,
 	public void run() {
 		setState(State.STATE_EXECUTING);
 		reset();
-		File tex_src_file = new File(tex_src);
 		if (tex_src_file.exists()) {
-			// compile the input file using the engine
-			File dir = tex_src_file.getParentFile();
-			timeout = timeout <= 0 ? default_compilation_timeout : timeout;
 			try {
-				shell.fork(command, dir, null, this, timeout);
+				chmodAllEngines();
+				File program_file = new File(
+						environment.getTeXMFBinaryDirectory() + "/"
+								+ tex_engine);
+				if (program_file.exists()) {
+					makeTEXMFCNF();
+				} else {
+					throw new TeXMFFileNotFoundException(
+							program_file.getName(), null);
+				}
+				// compile the input file using the engine
+				shell.fork(command, tex_src_file.getParentFile(), null, this,
+						timeout <= 0 ? default_compilation_timeout : timeout);
 				setState(State.STATE_COMPLETE);
 			} catch (Exception e) {
 				setException(e);
+			} finally {
+				setState(State.STATE_COMPLETE);
 			}
 		} else {
-			setException(new FileNotFoundException(tex_src + " does not exist!"));
+			setException(new FileNotFoundException(tex_src_file
+					+ " does not exist!"));
+			setState(State.STATE_COMPLETE);
 		}
 	}
 
