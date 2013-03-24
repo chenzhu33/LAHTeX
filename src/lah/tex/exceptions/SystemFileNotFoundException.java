@@ -1,7 +1,7 @@
 package lah.tex.exceptions;
 
 import lah.tex.Task;
-import lah.tex.manage.InstallationTask;
+import lah.tex.manage.InstallSystemFile;
 
 /**
  * This exception should be raised when the some core file (xz, busybox, cp,
@@ -31,7 +31,7 @@ public class SystemFileNotFoundException extends SolvableException {
 
 	@Override
 	public Task getSolution() {
-		return new InstallationTask(new String[] { getMissingSystemFile() });
+		return new InstallSystemFile(getMissingSystemFile());
 	}
 
 	@Override

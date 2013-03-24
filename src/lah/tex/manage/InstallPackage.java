@@ -3,7 +3,6 @@ package lah.tex.manage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -13,31 +12,35 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 import lah.spectre.Collections;
-import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
 import lah.tex.exceptions.SystemFileNotFoundException;
 import lah.tex.interfaces.IInstallationResult;
 
-public class InstallationTask extends Task implements IInstallationResult {
+public class InstallPackage extends Task implements IInstallationResult {
 
 	/**
 	 * Map each package to a list of packages it depends on
 	 */
-	private static Map<String, String[]> depend;
+	private static Map<String, String[]> dependency_map;
 
+	private static final Pattern line_pattern = Pattern
+			.compile("([^ ]+) (.*)\n");
+
+	/**
+	 * File extension for TeX Live package
+	 */
 	private static final String PACKAGE_EXTENSION = ".tar.xz";
+
+	private static final Pattern single_space_pattern = Pattern.compile(" ");
 
 	/**
 	 * RegEx pattern for the sub-directories in TEXMF_ROOT
 	 */
 	private static final Pattern texmf_subdir_patterns = Pattern
 			.compile("texmf.*|readme.*|tlpkg");
-
-	final Pattern line_pattern = Pattern.compile("([^ ]+) (.*)\n");
 
 	private int num_success_packages;
 
@@ -47,9 +50,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	private String[] pending_packages;
 
-	final Pattern single_space_pattern = Pattern.compile(" ");
-
-	public InstallationTask(String[] packages) {
+	public InstallPackage(String[] packages) {
 		this.packages = packages;
 	}
 
@@ -150,9 +151,9 @@ public class InstallationTask extends Task implements IInstallationResult {
 	}
 
 	private String[] getPackageDependency(String pkg_name) throws Exception {
-		if (depend == null)
+		if (dependency_map == null)
 			loadDependMap();
-		return depend.get(pkg_name);
+		return dependency_map.get(pkg_name);
 	}
 
 	@Override
@@ -179,56 +180,6 @@ public class InstallationTask extends Task implements IInstallationResult {
 			return super.getStatusString();
 	}
 
-	private void installSystemFile(String file_name, IFileSupplier file_supplier) {
-		// String[] app_data_files = { "xz", "busybox", "desc", "depend",
-		// "index", "dbkeys" };
-		// String[] commands = { "cp", "ls", "tar", "chmod", "rm" };
-		// InstallationTask result = new InstallationTask();
-		try {
-			setState(State.STATE_EXECUTING);
-			// Create necessary symbolic links for system commands
-			if (file_name.equals("cp") || file_name.equals("ls")
-					|| file_name.equals("tar") || file_name.equals("chmod")
-					|| file_name.equals("rm")) {
-				File bin_dir = new File(environment.getTeXMFBinaryDirectory());
-				File cmdfile = new File(environment.getTeXMFBinaryDirectory()
-						+ "/" + file_name);
-				if (!cmdfile.exists()) {
-					shell.fork(new String[] { environment.getBusyBox(), "ln",
-							"-s", "busybox", file_name }, bin_dir);
-				}
-				cmdfile.setExecutable(true);
-			} else {
-				// Otherwise, the file is an app-data file which should be
-				// obtained remotely
-				File df = file_supplier.getFile(file_name
-						+ (file_name.equals("xz") ? ".gz" : ".xz"));
-
-				// unpack the *.xz files
-				if (df.getName().endsWith(".xz"))
-					df = xzdec(df, false);
-
-				if (file_name.equals("xz") || file_name.equals("busybox")) {
-					// Move binaries to the binary directory and set as
-					// executable
-					InputStream dfstr = new FileInputStream(df);
-					if (file_name.equals("xz"))
-						dfstr = new GZIPInputStream(dfstr);
-					File target = new File(
-							environment.getTeXMFBinaryDirectory() + "/"
-									+ file_name);
-					Streams.streamToFile(dfstr, target, true, false);
-					target.setExecutable(true);
-					df.delete();
-				}
-			}
-			setState(State.STATE_COMPLETE);
-		} catch (Exception e) {
-			setException(e);
-			return;
-		}
-	}
-
 	private void loadDependMap() throws Exception {
 		Map<String, String[]> temp_depend = new TreeMap<String, String[]>();
 		String depend_content = Streams.readTextFile(environment
@@ -239,7 +190,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 			String[] ds = single_space_pattern.split(matcher.group(2));
 			temp_depend.put(p, ds);
 		}
-		depend = temp_depend;
+		dependency_map = temp_depend;
 	}
 
 	/**
@@ -296,12 +247,8 @@ public class InstallationTask extends Task implements IInstallationResult {
 
 	@Override
 	public void run() {
+		reset();
 		setState(State.STATE_EXECUTING);
-		// copy xz, busybox, ... to private directory
-		if (packages.length == 1 && packages[0].startsWith("/")) {
-			installSystemFile(packages[0].substring(1), file_supplier);
-			return;
-		}
 
 		String[] pkgs_to_install;
 		try {
@@ -330,7 +277,7 @@ public class InstallationTask extends Task implements IInstallationResult {
 					continue;
 				}
 
-				// Copy the package to TeX root (if necessary)
+				// Copy the package to TeXMF root (if necessary)
 				if (!pkg_file.getParentFile().getAbsolutePath()
 						.equals(texmf_root)) {
 					File new_pkg_file = new File(texmf_root + "/"
@@ -339,28 +286,10 @@ public class InstallationTask extends Task implements IInstallationResult {
 							new_pkg_file, true, false);
 					pkg_file = new_pkg_file;
 				}
-
-				// Decompress the package, assuming that the file is in root
-				shell.fork(new String[] { environment.getXZ(), "-d", "-k",
-						pkg_file.getName() }, pkg_file.getParentFile());
-
-				// xzdec(pkg_file, true);
-
-				// Untar the decompressed package to the tree if it exists
-				if (new File(pkg_file.getParentFile() + "/"
-						+ pkgs_to_install[i] + ".tar").exists()) {
-					shell.fork(new String[] { environment.getTAR(), "-xf",
-							pkgs_to_install[i] + ".tar" },
-							pkg_file.getParentFile());
-					shell.fork(new String[] { environment.getRM(),
-							pkgs_to_install[i] + ".tar" },
-							pkg_file.getParentFile());
-					setPackageState(i,
-							IInstallationResult.PACKAGE_SUCCESSFULLY_INSTALLED);
-				} else {
-					setPackageState(i, IInstallationResult.PACKAGE_FAIL);
-				}
-
+				// Extract the package.tar.xz file
+				shell.fork(
+						new String[] { environment.getTAR(), "xf",
+								pkg_file.getName() }, pkg_file.getParentFile());
 				has_lualibs = has_lualibs
 						|| pkgs_to_install[i].equals("lualibs");
 			} catch (SystemFileNotFoundException e) {
@@ -401,34 +330,6 @@ public class InstallationTask extends Task implements IInstallationResult {
 			pending_packages = packages;
 			package_states = new int[pending_packages.length];
 		}
-	}
-
-	/**
-	 * Decompress a XZ file, return the resulting file
-	 * 
-	 * @param xz_file
-	 *            The XZ file to decompress, must have extension ".xz"
-	 * @return The resulting {@link File} of the decompression or
-	 *         {@literal null} if input file is invalid or no result could be
-	 *         produced (for example, xz process fails).
-	 * @throws Exception
-	 */
-	private File xzdec(File xz_file, boolean keep_input) throws Exception {
-		if (xz_file != null && xz_file.getName().endsWith(".xz")) {
-			String[] xz_cmd = new String[keep_input ? 4 : 3];
-			xz_cmd[0] = environment.getXZ();
-			xz_cmd[1] = "-d";
-			xz_cmd[xz_cmd.length - 1] = xz_file.getName();
-			if (keep_input)
-				xz_cmd[2] = "-k";
-			shell.fork(xz_cmd, xz_file.getParentFile());
-			File result = new File(xz_file.getParent()
-					+ "/"
-					+ xz_file.getName().substring(0,
-							xz_file.getName().length() - 3));
-			return (result.exists() ? result : null);
-		}
-		return null;
 	}
 
 }

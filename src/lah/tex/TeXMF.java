@@ -6,10 +6,10 @@ import lah.spectre.Collections;
 import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
-import lah.tex.compile.CompilationTask;
+import lah.tex.compile.CompileDocument;
 import lah.tex.exceptions.SolvableException;
 import lah.tex.interfaces.IEnvironment;
-import lah.tex.manage.InstallationTask;
+import lah.tex.manage.InstallPackage;
 import lah.tex.manage.MakeFontConfigurations;
 import lah.tex.manage.MakeLSR;
 import lah.tex.manage.MakeLanguageConfigurations;
@@ -93,10 +93,10 @@ public class TeXMF extends TaskManager<Task> {
 		Task result_task;
 		switch (task_type) {
 		case TASK_COMPILE:
-			result_task = new CompilationTask(args[0], args[1]);
+			result_task = new CompileDocument(args[0], args[1]);
 			break;
 		case TASK_INSTALL_PACKAGE:
-			result_task = new InstallationTask(args);
+			result_task = new InstallPackage(args);
 			break;
 		case TASK_MAKE_FONTCONFIG:
 			result_task = new MakeFontConfigurations();

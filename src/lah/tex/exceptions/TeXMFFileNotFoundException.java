@@ -2,7 +2,7 @@ package lah.tex.exceptions;
 
 import lah.spectre.Collections;
 import lah.tex.Task;
-import lah.tex.manage.InstallationTask;
+import lah.tex.manage.InstallPackage;
 
 public class TeXMFFileNotFoundException extends SolvableException {
 
@@ -35,7 +35,7 @@ public class TeXMFFileNotFoundException extends SolvableException {
 
 	@Override
 	public Task getSolution() {
-		return (missing_packages == null) ? null : new InstallationTask(
+		return (missing_packages == null) ? null : new InstallPackage(
 				missing_packages);
 	}
 

@@ -1,5 +1,6 @@
 package lah.tex;
 
+import java.io.File;
 import java.util.LinkedList;
 
 import lah.spectre.interfaces.IFileSupplier;
@@ -84,9 +85,35 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return res.size() > 0 ? res.toArray(new String[res.size()]) : null;
 	}
 
-	protected Exception exception;
+	/**
+	 * Decompress a XZ file, return the resulting file
+	 * 
+	 * @param xz_file
+	 *            The XZ file to decompress, must have extension ".xz"
+	 * @return The resulting {@link File} of the decompression or
+	 *         {@literal null} if input file is invalid or no result could be
+	 *         produced (for example, xz process fails).
+	 * @throws Exception
+	 */
+	public static File xzdec(File xz_file, boolean keep_input) throws Exception {
+		if (xz_file != null && xz_file.getName().endsWith(".xz")) {
+			String[] xz_cmd = new String[keep_input ? 4 : 3];
+			xz_cmd[0] = environment.getXZ();
+			xz_cmd[1] = "-d";
+			xz_cmd[xz_cmd.length - 1] = xz_file.getName();
+			if (keep_input)
+				xz_cmd[2] = "-k";
+			shell.fork(xz_cmd, xz_file.getParentFile());
+			File result = new File(xz_file.getParent()
+					+ "/"
+					+ xz_file.getName().substring(0,
+							xz_file.getName().length() - 3));
+			return (result.exists() ? result : null);
+		}
+		return null;
+	}
 
-	private int num_exceptions_resolved;
+	protected Exception exception;
 
 	protected State state;
 
@@ -99,10 +126,6 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	@Override
 	public Exception getException() {
 		return exception;
-	}
-
-	public int getNumberOfExceptionResolved() {
-		return num_exceptions_resolved;
 	}
 
 	public String getStatusString() {
@@ -145,11 +168,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	public void reset() {
 		this.exception = null;
-		this.state = State.STATE_PENDING;
-	}
-
-	public void resetNumberOfExceptionsResolved() {
-		num_exceptions_resolved = 0;
+		setState(State.STATE_PENDING);
 	}
 
 	protected void setException(Exception exception) {
@@ -163,7 +182,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 			}
 		}
 	}
-
+	
 	protected void setState(State state) {
 		this.state = state;
 	}

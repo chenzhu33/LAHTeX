@@ -59,7 +59,7 @@ public class MakeLanguageConfigurations extends Task {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		reset();
 		final String texmf_language_config = environment
 				.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
 		new File(texmf_language_config).mkdirs();

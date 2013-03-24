@@ -25,7 +25,7 @@ import lah.tex.interfaces.ICompilationResult;
  * @author L.A.H.
  * 
  */
-public class CompilationTask extends Task implements ICompilationResult,
+public class CompileDocument extends Task implements ICompilationResult,
 		IBufferProcessor {
 
 	// Pattern for missing fonts, probably not necessary
@@ -118,10 +118,10 @@ public class CompilationTask extends Task implements ICompilationResult,
 	/**
 	 * Protected constructor for subclasses
 	 */
-	protected CompilationTask() {
+	protected CompileDocument() {
 	}
 
-	public CompilationTask(String tex_engine, String tex_src) {
+	public CompileDocument(String tex_engine, String tex_src) {
 		this.tex_engine = tex_engine;
 		this.tex_src_file = new File(tex_src);
 		String input_file_no_ext = FileName.removeFileExtension(tex_src_file
@@ -306,9 +306,10 @@ public class CompilationTask extends Task implements ICompilationResult,
 		}
 	}
 
+	@Override
 	public void reset() {
+		super.reset();
 		output_buffer.delete(0, output_buffer.length());
-		setState(State.STATE_PENDING);
 	}
 
 	@Override

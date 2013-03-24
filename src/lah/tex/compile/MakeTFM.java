@@ -2,7 +2,7 @@ package lah.tex.compile;
 
 import java.io.File;
 
-public class MakeTFM extends CompilationTask {
+public class MakeTFM extends CompileDocument {
 
 	private String name;
 

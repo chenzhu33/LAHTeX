@@ -20,14 +20,24 @@ public class MakeLSR extends Task {
 	private static final String[] texmf_dirs = { "texmf", "texmf-dist",
 			"texmf-var" };
 
+	private File[] texmf_dirs_files;
+
+	public MakeLSR() {
+		texmf_dirs_files = new File[texmf_dirs.length];
+		for (int i = 0; i < texmf_dirs.length; i++) {
+			texmf_dirs_files[i] = new File(environment.getTeXMFRootDirectory()
+					+ "/" + texmf_dirs[i]);
+		}
+	}
+
 	@Override
 	public String getDescription() {
-		return "Generate ls-R";
+		return "Generate ls-R path databases";
 	}
 
 	@Override
 	public void run() {
-
+		reset();
 		for (int i = 0; i < texmf_dirs.length; i++) {
 			File texmf_dir = new File(environment.getTeXMFRootDirectory() + "/"
 					+ texmf_dirs[i]);

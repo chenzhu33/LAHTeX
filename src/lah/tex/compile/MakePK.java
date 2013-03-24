@@ -5,7 +5,7 @@ import java.util.Map;
 
 import lah.spectre.CommandLineArguments;
 
-public class MakePK extends CompilationTask {
+public class MakePK extends CompileDocument {
 
 	private String kpse_command;
 

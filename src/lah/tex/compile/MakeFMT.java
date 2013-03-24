@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import lah.tex.manage.MakeLanguageConfigurations;
 
-public class MakeFMT extends CompilationTask {
+public class MakeFMT extends CompileDocument {
 
 	/**
 	 * Pattern for TeX, MetaFont or MetaPost memory dump file
@@ -35,7 +35,7 @@ public class MakeFMT extends CompilationTask {
 		String[] options = null;
 
 		if (type.equals("fmt")) {
-			tex_engine = program = CompilationTask.getProgramFromFormat(format);
+			tex_engine = program = CompileDocument.getProgramFromFormat(format);
 			default_ext = "tex";
 			if (format.startsWith("pdf") || format.startsWith("xe"))
 				options = new String[] { "-etex" };
@@ -68,6 +68,7 @@ public class MakeFMT extends CompilationTask {
 
 	@Override
 	public void run() {
+		reset();
 		try {
 			setState(State.STATE_EXECUTING);
 

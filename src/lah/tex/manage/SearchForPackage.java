@@ -2,16 +2,16 @@ package lah.tex.manage;
 
 import lah.tex.Task;
 
-public class PackageSearchTask extends Task {
+public class SearchForPackage extends Task {
 
 	protected String file_query;
 
 	protected String[] search_result;
 
-	protected PackageSearchTask() {
+	protected SearchForPackage() {
 	}
 
-	public PackageSearchTask(String file_query) {
+	public SearchForPackage(String file_query) {
 		this.file_query = file_query;
 	}
 
