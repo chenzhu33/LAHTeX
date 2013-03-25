@@ -64,8 +64,8 @@ public class MakeLSR extends Task {
 				// Now do the "ls -R . >> ls-R" in the texmf root directory
 				final FileOutputStream stream = new FileOutputStream(
 						temp_lsRfile, true);
-				shell.fork(new String[] { environment.getLS(), "-R", "." },
-						texmf_dir, new StreamRedirector(stream), 6000000);
+				shell.fork(new String[] { environment.getBusyBox(), "ls", "-R",
+						"." }, texmf_dir, new StreamRedirector(stream), 6000000);
 				stream.close();
 			} catch (Exception e) {
 				setException(e);

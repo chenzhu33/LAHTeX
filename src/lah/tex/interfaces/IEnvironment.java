@@ -6,15 +6,14 @@ import lah.tex.exceptions.SystemFileNotFoundException;
 
 public interface IEnvironment {
 
+	public static final String BUSYBOX = "busybox";
+
+	public static final String LAHTEX_DEPEND = "lahtex_depend",
+			LAHTEX_INDEX = "lahtex_index", LAHTEX_DESC = "lahtex_desc";
+
 	String getArchitecture();
 
 	String getBusyBox() throws SystemFileNotFoundException;
-
-	String getCHMOD() throws SystemFileNotFoundException;
-
-	String getCP() throws SystemFileNotFoundException;
-
-	String getLS() throws SystemFileNotFoundException;
 
 	String getOSFontsDir();
 
@@ -24,15 +23,9 @@ public interface IEnvironment {
 
 	File getPackageIndexFile() throws SystemFileNotFoundException;
 
-	String getRM() throws SystemFileNotFoundException;
-
-	String getTAR() throws SystemFileNotFoundException;
-
 	String getTeXMFBinaryDirectory();
 
 	String getTeXMFRootDirectory();
-
-	String getXZ() throws SystemFileNotFoundException;
 
 	boolean isPortable();
 

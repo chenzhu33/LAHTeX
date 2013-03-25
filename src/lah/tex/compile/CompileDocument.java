@@ -163,9 +163,8 @@ public class CompileDocument extends Task implements ICompilationResult,
 		File bindir = new File(environment.getTeXMFBinaryDirectory()
 				+ "/../../");
 		if (bindir.exists() && bindir.isDirectory()) {
-			shell.fork(
-					new String[] { environment.getCHMOD(), "-R", "700", "." },
-					bindir);
+			shell.fork(new String[] { environment.getBusyBox(), "chmod", "-R",
+					"700", "." }, bindir);
 			return true;
 		}
 		return true;

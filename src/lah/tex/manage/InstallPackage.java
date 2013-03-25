@@ -216,17 +216,14 @@ public class InstallPackage extends Task implements IInstallationResult {
 			if (f.isFile())
 				continue;
 			if (f.getName().equals("bin")) {
-				shell.fork(
-						new String[] {
-								environment.getCP(),
-								"-r",
-								f.getName(),
-								environment.getTeXMFBinaryDirectory()
-										+ "/../../" }, f.getParentFile());
-				shell.fork(
-						new String[] { environment.getRM(), "-R", f.getName() },
+				shell.fork(new String[] { environment.getBusyBox(), "cp", "-r",
+						f.getName(),
+						environment.getTeXMFBinaryDirectory() + "/../../" },
 						f.getParentFile());
-				shell.fork(new String[] { environment.getCHMOD(), "-R", "700",
+				shell.fork(new String[] { environment.getBusyBox(), "rm", "-R",
+						f.getName() }, f.getParentFile());
+				shell.fork(new String[] { environment.getBusyBox(), "chmod",
+						"-R", "700",
 						environment.getTeXMFBinaryDirectory() + "/../../" },
 						null);
 			} else if (!matcher.reset(f.getName()).matches()) {
@@ -235,12 +232,12 @@ public class InstallPackage extends Task implements IInstallationResult {
 				if (!texmf_dist.exists())
 					texmf_dist.mkdirs();
 				shell.fork(
-						new String[] { environment.getCP(), "-R", "-f",
-								f.getName(), texmf_dist.getAbsolutePath() + "/" },
+						new String[] { environment.getBusyBox(), "cp", "-R",
+								"-f", f.getName(),
+								texmf_dist.getAbsolutePath() + "/" },
 						f.getParentFile());
-				shell.fork(
-						new String[] { environment.getRM(), "-R", f.getName() },
-						f.getParentFile());
+				shell.fork(new String[] { environment.getBusyBox(), "rm", "-R",
+						f.getName() }, f.getParentFile());
 			}
 		}
 	}
@@ -287,9 +284,8 @@ public class InstallPackage extends Task implements IInstallationResult {
 					pkg_file = new_pkg_file;
 				}
 				// Extract the package.tar.xz file
-				shell.fork(
-						new String[] { environment.getTAR(), "xf",
-								pkg_file.getName() }, pkg_file.getParentFile());
+				shell.fork(new String[] { environment.getBusyBox(), "tar",
+						"xf", pkg_file.getName() }, pkg_file.getParentFile());
 				has_lualibs = has_lualibs
 						|| pkgs_to_install[i].equals("lualibs");
 			} catch (SystemFileNotFoundException e) {
