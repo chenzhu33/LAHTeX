@@ -286,6 +286,8 @@ public class InstallPackage extends Task implements IInstallationResult {
 				// Extract the package.tar.xz file
 				shell.fork(new String[] { environment.getBusyBox(), "tar",
 						"xf", pkg_file.getName() }, pkg_file.getParentFile());
+				setPackageState(i,
+						IInstallationResult.PACKAGE_SUCCESSFULLY_INSTALLED);
 				has_lualibs = has_lualibs
 						|| pkgs_to_install[i].equals("lualibs");
 			} catch (SystemFileNotFoundException e) {

@@ -8,6 +8,8 @@ import lah.tex.Task;
 
 public class MakeFontConfigurations extends Task {
 
+	private static final String[] FC_CACHE_CMD = new String[] { "fc-cache" };
+
 	@Override
 	public String getDescription() {
 		return "Generate fontconfig configuration and cache";
@@ -15,6 +17,8 @@ public class MakeFontConfigurations extends Task {
 
 	@Override
 	public void run() {
+		reset();
+		setState(State.STATE_EXECUTING);
 		// Prepare the font configuration file (if necessary)
 		File configfile = new File(environment.getTeXMFRootDirectory()
 				+ "/texmf-var/fonts/conf/fonts.conf");
@@ -46,9 +50,8 @@ public class MakeFontConfigurations extends Task {
 		// Execute command to re-generate the font cache
 		// TODO Remove this!
 		try {
-			shell.fork(new String[] { environment.getTeXMFBinaryDirectory()
-					+ "/fc-cache" }, null, new String[] { "FONTCONFIG_PATH",
-					configdir.getAbsolutePath() }, null, 0);
+			shell.fork(FC_CACHE_CMD, null);
+			setState(State.STATE_COMPLETE);
 		} catch (Exception e) {
 			setException(e);
 			return;

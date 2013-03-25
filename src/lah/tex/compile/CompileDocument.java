@@ -313,8 +313,8 @@ public class CompileDocument extends Task implements ICompilationResult,
 
 	@Override
 	public void run() {
-		setState(State.STATE_EXECUTING);
 		reset();
+		setState(State.STATE_EXECUTING);
 		if (tex_src_file.exists()) {
 			try {
 				chmodAllEngines();
