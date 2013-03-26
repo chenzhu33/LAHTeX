@@ -1,8 +1,6 @@
 package lah.tex.manage;
 
-import lah.tex.interfaces.IPackage;
-
-class TLPackage implements Comparable<TLPackage>, IPackage {
+public class TLPackage implements Comparable<TLPackage> {
 
 	public static final String KEY_PKG_SHORT_DESCRIPTION = "shortdesc";
 
@@ -45,7 +43,6 @@ class TLPackage implements Comparable<TLPackage>, IPackage {
 			return false;
 	}
 
-	@Override
 	public String getDescription() {
 		return description;
 	}
@@ -55,7 +52,6 @@ class TLPackage implements Comparable<TLPackage>, IPackage {
 	 * 
 	 * @return the name of the package
 	 */
-	@Override
 	public String getName() {
 		return name;
 	}

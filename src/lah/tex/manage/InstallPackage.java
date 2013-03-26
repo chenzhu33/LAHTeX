@@ -15,11 +15,15 @@ import java.util.regex.Pattern;
 
 import lah.spectre.Collections;
 import lah.spectre.stream.Streams;
+import lah.tex.IEnvironment;
 import lah.tex.Task;
 import lah.tex.exceptions.SystemFileNotFoundException;
-import lah.tex.interfaces.IInstallationResult;
 
-public class InstallPackage extends Task implements IInstallationResult {
+public class InstallPackage extends Task {
+
+	public static enum PackageState {
+		PACKAGE_FAIL, PACKAGE_INSTALLING, PACKAGE_SUCCESSFULLY_INSTALLED
+	}
 
 	/**
 	 * Map each package to a list of packages it depends on
@@ -32,7 +36,7 @@ public class InstallPackage extends Task implements IInstallationResult {
 	/**
 	 * File extension for TeX Live package
 	 */
-	private static final String PACKAGE_EXTENSION = ".tar.xz";
+	public static final String PACKAGE_EXTENSION = ".tar.xz";
 
 	private static final Pattern single_space_pattern = Pattern.compile(" ");
 
@@ -44,7 +48,7 @@ public class InstallPackage extends Task implements IInstallationResult {
 
 	private int num_success_packages;
 
-	private int[] package_states;
+	private PackageState[] package_states;
 
 	private String[] packages;
 
@@ -156,17 +160,14 @@ public class InstallPackage extends Task implements IInstallationResult {
 		return dependency_map.get(pkg_name);
 	}
 
-	@Override
-	public int getPackageStatus(int position) {
+	public PackageState getPackageStatus(int position) {
 		return package_states[position];
 	}
 
-	@Override
 	public String[] getPendingPackages() {
 		return pending_packages;
 	}
 
-	@Override
 	public String[] getRequestedPackages() {
 		return packages;
 	}
@@ -182,8 +183,10 @@ public class InstallPackage extends Task implements IInstallationResult {
 
 	private void loadDependMap() throws Exception {
 		Map<String, String[]> temp_depend = new TreeMap<String, String[]>();
-		String depend_content = Streams.readTextFile(environment
-				.getPackageDependFile());
+		// String depend_content = Streams.readTextFile(environment
+		// .getPackageDependFile());
+		String depend_content = environment
+				.readDataFile(IEnvironment.LAHTEX_DEPEND);
 		Matcher matcher = line_pattern.matcher(depend_content);
 		while (matcher.find()) {
 			String p = matcher.group(1);
@@ -259,7 +262,7 @@ public class InstallPackage extends Task implements IInstallationResult {
 		final String texmf_root = environment.getTeXMFRootDirectory();
 		boolean has_lualibs = false;
 		for (int i = 0; i < pkgs_to_install.length; i++) {
-			setPackageState(i, IInstallationResult.PACKAGE_INSTALLING);
+			setPackageState(i, PackageState.PACKAGE_INSTALLING);
 			// TODO Fix this: return on failure to install requested package
 			// only continue if some dependent package is missing
 			try {
@@ -270,7 +273,7 @@ public class InstallPackage extends Task implements IInstallationResult {
 						+ PACKAGE_EXTENSION;
 				File pkg_file = file_supplier.getFile(pkf_file_name);
 				if (pkg_file == null) {
-					setPackageState(i, IInstallationResult.PACKAGE_FAIL);
+					setPackageState(i, PackageState.PACKAGE_FAIL);
 					continue;
 				}
 
@@ -286,15 +289,14 @@ public class InstallPackage extends Task implements IInstallationResult {
 				// Extract the package.tar.xz file
 				shell.fork(new String[] { environment.getBusyBox(), "tar",
 						"xf", pkg_file.getName() }, pkg_file.getParentFile());
-				setPackageState(i,
-						IInstallationResult.PACKAGE_SUCCESSFULLY_INSTALLED);
+				setPackageState(i, PackageState.PACKAGE_SUCCESSFULLY_INSTALLED);
 				has_lualibs = has_lualibs
 						|| pkgs_to_install[i].equals("lualibs");
 			} catch (SystemFileNotFoundException e) {
 				setException(e);
 				return;
 			} catch (Exception e) {
-				setPackageState(i, IInstallationResult.PACKAGE_FAIL);
+				setPackageState(i, PackageState.PACKAGE_FAIL);
 			}
 		}
 
@@ -309,9 +311,9 @@ public class InstallPackage extends Task implements IInstallationResult {
 		}
 	}
 
-	public void setPackageState(int package_id, int package_state) {
+	public void setPackageState(int package_id, PackageState package_state) {
 		package_states[package_id] = package_state;
-		if (package_state == PACKAGE_SUCCESSFULLY_INSTALLED)
+		if (package_state == PackageState.PACKAGE_SUCCESSFULLY_INSTALLED)
 			num_success_packages++;
 	}
 
@@ -320,7 +322,7 @@ public class InstallPackage extends Task implements IInstallationResult {
 			// move to state installing packages
 			num_success_packages = 0;
 			pending_packages = packages;
-			package_states = new int[pending_packages.length];
+			package_states = new PackageState[pending_packages.length];
 		}
 	}
 

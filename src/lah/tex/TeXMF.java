@@ -1,6 +1,10 @@
 package lah.tex;
 
 import java.io.File;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lah.spectre.Collections;
 import lah.spectre.interfaces.IFileSupplier;
@@ -8,7 +12,6 @@ import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.compile.CompileDocument;
 import lah.tex.exceptions.SolvableException;
-import lah.tex.interfaces.IEnvironment;
 import lah.tex.manage.InstallPackage;
 import lah.tex.manage.MakeFontConfigurations;
 import lah.tex.manage.MakeLSR;
@@ -45,6 +48,22 @@ public class TeXMF extends TaskManager<Task> {
 		TASK_NULL
 	}
 
+	/**
+	 * My Dropbox shared folder containing the packages
+	 */
+	private static final String DROPBOX_ARCHIVE = "http://dl.dropbox.com/sh/wgsn35mknpaa29k/";
+
+	/**
+	 * Map a package name to its Dropbox's hash key
+	 */
+	private static Map<String, String> dropbox_keys_map;
+
+	/**
+	 * Pattern for lines in lahtex_dbkeys
+	 */
+	private static final Pattern package_key_pattern = Pattern
+			.compile("([^ ]+) (.*)\n");
+
 	private static TeXMF texmf_instance;
 
 	public static final TeXMF getInstance(IEnvironment environment,
@@ -74,7 +93,7 @@ public class TeXMF extends TaskManager<Task> {
 		Task.shell.export("PATH", path);
 		Task.shell.export("TMPDIR", tmpdir);
 		Task.shell.export("FONTCONFIG_PATH", fontconfig_path);
-		Task.shell.export("OSFONTDIR", environment.getOSFontsDir());
+		Task.shell.export("OSFONTDIR", environment.getOSFontsDirectory());
 	}
 
 	/**
@@ -114,6 +133,22 @@ public class TeXMF extends TaskManager<Task> {
 
 	public String[] getAllLanguages() throws Exception {
 		return null;
+	}
+
+	public String getDropboxPackageURL(String package_name) throws Exception {
+		if (dropbox_keys_map == null) {
+			Map<String, String> temp_dropbox_keys_map = new TreeMap<String, String>();
+			String dbkeys = Task.environment
+					.readDataFile(IEnvironment.LAHTEX_DBKEYS);
+			Matcher matcher = package_key_pattern.matcher(dbkeys);
+			while (matcher.find())
+				temp_dropbox_keys_map.put(matcher.group(1), matcher.group(2));
+			dropbox_keys_map = temp_dropbox_keys_map;
+		}
+		String key = (dropbox_keys_map == null ? null : dropbox_keys_map
+				.get(package_name));
+		return (key == null ? null : DROPBOX_ARCHIVE + key + "/" + package_name
+				+ InstallPackage.PACKAGE_EXTENSION);
 	}
 
 	public void resetAndAdd(Task task) {

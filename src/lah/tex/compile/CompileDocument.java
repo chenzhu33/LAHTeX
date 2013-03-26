@@ -16,7 +16,6 @@ import lah.spectre.stream.IBufferProcessor;
 import lah.tex.Task;
 import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
-import lah.tex.interfaces.ICompilationResult;
 
 /**
  * Class for an compilation task which encapsulates not only the specific
@@ -25,8 +24,7 @@ import lah.tex.interfaces.ICompilationResult;
  * @author L.A.H.
  * 
  */
-public class CompileDocument extends Task implements ICompilationResult,
-		IBufferProcessor {
+public class CompileDocument extends Task implements IBufferProcessor {
 
 	// Pattern for missing fonts, probably not necessary
 	// Pattern.compile("! Font \\\\[^=]*=([^\\s]*)\\s"),
@@ -180,7 +178,6 @@ public class CompileDocument extends Task implements ICompilationResult,
 			return null;
 	}
 
-	@Override
 	public LogLine getLogLine(int index) {
 		if (logs != null && index < logs.size())
 			return logs.get(index);
@@ -193,7 +190,6 @@ public class CompileDocument extends Task implements ICompilationResult,
 	 * 
 	 * @return
 	 */
-	@Override
 	public File getOutputFile() {
 		// ICompilationCommand cmd;
 		// if ((cmd = getCompilationCommand()) != null)

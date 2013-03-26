@@ -6,9 +6,7 @@ import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
-import lah.spectre.stream.Streams;
 import lah.tex.exceptions.SolvableException;
-import lah.tex.interfaces.IEnvironment;
 import lah.tex.manage.MakeLSR;
 
 /**
@@ -63,9 +61,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	public static String[] findPackagesWithFile(String file_query)
 			throws Exception {
 		if (package_file_index == null) {
-			String temp_index = Streams.readTextFile(environment
-					.getPackageIndexFile());
-			package_file_index = temp_index;
+			package_file_index = environment
+					.readDataFile(IEnvironment.LAHTEX_INDEX);
 		}
 		LinkedList<String> res = new LinkedList<String>();
 		int k = 0;

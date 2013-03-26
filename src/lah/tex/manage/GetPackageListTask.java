@@ -5,15 +5,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lah.spectre.stream.Streams;
+import lah.tex.IEnvironment;
 import lah.tex.Task;
-import lah.tex.interfaces.IPackage;
-import lah.tex.interfaces.IPackageListRetrievalResult;
 
-public class GetPackageListTask extends Task implements
-		IPackageListRetrievalResult {
+public class GetPackageListTask extends Task {
 
-	private static List<IPackage> package_list;
+	private static List<TLPackage> package_list;
 
 	private final Pattern line_pattern = Pattern.compile("([^ ]+) (.*)\n");
 
@@ -22,7 +19,7 @@ public class GetPackageListTask extends Task implements
 		return "Get list of available packages";
 	}
 
-	public List<IPackage> getPackageList() {
+	public List<TLPackage> getPackageList() {
 		return package_list;
 	}
 
@@ -33,18 +30,18 @@ public class GetPackageListTask extends Task implements
 		if (package_list != null)
 			return;
 		try {
-			String desc = Streams.readTextFile(environment
-					.getPackageDescriptionFile());
+			// String desc = Streams.readTextFile(environment
+			// .getPackageDescriptionFile());
+			String desc = environment.readDataFile(IEnvironment.LAHTEX_DESC);
 			Matcher matcher = line_pattern.matcher(desc);
-			List<TLPackage> pkgs_list = new ArrayList<TLPackage>();
+			List<TLPackage> temp_package_list = new ArrayList<TLPackage>();
 			while (matcher.find()) {
 				String name = matcher.group(1);
 				String shortdesc = matcher.group(2);
 				TLPackage pkg = new TLPackage(name, shortdesc);
-				pkgs_list.add(pkg);
+				temp_package_list.add(pkg);
 			}
-			package_list = new ArrayList<IPackage>();
-			package_list.addAll(pkgs_list);
+			package_list = temp_package_list;
 			setState(State.STATE_COMPLETE);
 		} catch (Exception e) {
 			setException(e);
