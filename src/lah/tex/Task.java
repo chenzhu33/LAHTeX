@@ -37,7 +37,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected static IEnvironment environment;
 
 	protected static IFileSupplier file_supplier;
-	
+
 	protected static MakeLSR make_lsr_task;
 
 	protected static TaskManager<Task> manager;
@@ -136,9 +136,24 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return false;
 	}
 
+	/**
+	 * Reset the state of this task for next execution. Subclasses SHOULD invoke
+	 * reset() first when implementing run().
+	 */
 	public void reset() {
 		this.exception = null;
 		setState(State.STATE_PENDING);
+	}
+
+	/**
+	 * Regenerate the ls-R files. This MUST be called lastly.
+	 */
+	protected void runFinalMakeLSR() {
+		make_lsr_task.run();
+		if (make_lsr_task.hasException())
+			setException(make_lsr_task.getException());
+		else
+			setState(State.STATE_COMPLETE);
 	}
 
 	protected void setException(Exception exception) {

@@ -12,6 +12,7 @@ public class MakeTFM extends CompileDocument {
 
 	@Override
 	public void run() {
+		reset();
 		int mag = 1;
 		String mfmode = "ljfour";
 		String arg = "\\mode:=" + mfmode + "; \\mag:=" + mag
@@ -21,8 +22,9 @@ public class MakeTFM extends CompileDocument {
 		tfm_loc.mkdirs();
 		setDefaultFileExtension("mf");
 		try {
-			shell.fork(new String[] { "mf", arg }, tfm_loc);
-			make_lsr_task.run();
+			shell.fork(new String[] { "mf", arg }, tfm_loc, this,
+					default_compilation_timeout);
+			runFinalMakeLSR();
 		} catch (Exception e) {
 			setException(e);
 			return;

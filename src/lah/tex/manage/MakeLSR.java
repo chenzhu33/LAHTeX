@@ -62,11 +62,12 @@ public class MakeLSR extends Task {
 			try {
 				Streams.writeStringToFile(lsR_magic, temp_lsRfile, false);
 				// Now do the "ls -R . >> ls-R" in the texmf root directory
-				final FileOutputStream stream = new FileOutputStream(
+				final FileOutputStream lsR_stream = new FileOutputStream(
 						temp_lsRfile, true);
 				shell.fork(new String[] { environment.getBusyBox(), "ls", "-R",
-						"." }, texmf_dir, new StreamRedirector(stream), 6000000);
-				stream.close();
+						"." }, texmf_dir, new StreamRedirector(lsR_stream),
+						600000);
+				lsR_stream.close();
 			} catch (Exception e) {
 				setException(e);
 				return;
@@ -75,5 +76,6 @@ public class MakeLSR extends Task {
 			// Move the temporary file to the intended location
 			temp_lsRfile.renameTo(lsRfile);
 		}
+		setState(State.STATE_COMPLETE);
 	}
 }

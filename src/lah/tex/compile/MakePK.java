@@ -50,6 +50,7 @@ public class MakePK extends CompileDocument {
 
 	@Override
 	public void run() {
+		reset();
 		String[] args = kpse_command.split("\\s+");
 		Map<String, String> arg_map = CommandLineArguments
 				.parseCommandLineArguments(args);
@@ -72,9 +73,10 @@ public class MakePK extends CompileDocument {
 		pk_loc.mkdirs();
 		setDefaultFileExtension("mf");
 		try {
-			shell.fork(new String[] { "mf", arg }, pk_loc);
+			shell.fork(new String[] { "mf", arg }, pk_loc, this,
+					default_compilation_timeout);
 			shell.fork(new String[] { "gftopk", gf_name, pk_name }, pk_loc);
-			make_lsr_task.run();
+			runFinalMakeLSR();
 		} catch (Exception e) {
 			setException(e);
 			return;

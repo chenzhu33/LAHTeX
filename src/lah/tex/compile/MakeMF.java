@@ -62,6 +62,7 @@ public class MakeMF extends Task {
 
 	@Override
 	public void run() {
+		reset();
 		Matcher rootname_pointsize_matcher = mf_font_rootname_pointsize_pattern
 				.matcher(name);
 		String realsize = null, rootname = null;
@@ -108,7 +109,7 @@ public class MakeMF extends Task {
 					+ ".mf");
 			mf_output.write(mf_content[match]);
 			mf_output.close();
-			make_lsr_task.run();
+			runFinalMakeLSR();
 		} catch (Exception e) {
 			setException(e);
 			return;

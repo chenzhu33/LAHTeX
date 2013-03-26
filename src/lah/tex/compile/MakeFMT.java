@@ -98,11 +98,7 @@ public class MakeFMT extends CompileDocument {
 
 			// Now create and run the process to generate the format file
 			shell.fork(command, fmt_loc, this, default_compilation_timeout);
-			make_lsr_task.run();
-			// ls might not be available
-			if (make_lsr_task.hasException())
-				setException(make_lsr_task.getException());
-			setState(State.STATE_COMPLETE);
+			runFinalMakeLSR();
 		} catch (Exception e) {
 			setException(e);
 			return;

@@ -28,6 +28,7 @@ public class GetPackageListTask extends Task implements
 
 	@Override
 	public void run() {
+		reset();
 		// already loaded, there is no need to run again
 		if (package_list != null)
 			return;
@@ -44,6 +45,7 @@ public class GetPackageListTask extends Task implements
 			}
 			package_list = new ArrayList<IPackage>();
 			package_list.addAll(pkgs_list);
+			setState(State.STATE_COMPLETE);
 		} catch (Exception e) {
 			setException(e);
 		}

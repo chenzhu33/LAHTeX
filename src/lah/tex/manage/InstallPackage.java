@@ -301,17 +301,11 @@ public class InstallPackage extends Task implements IInstallationResult {
 		// Post download and extract packages
 		try {
 			relocate(); // relocate the files to the TeX directory structures
-			make_lsr_task.run(); // and also regenerate ls-R files
-			if (make_lsr_task.hasException()) {
-				setException(make_lsr_task.getException());
-				return;
-			}
 			if (has_lualibs)
 				fixLualibsFile();
+			runFinalMakeLSR(); // and also regenerate ls-R files
 		} catch (Exception e) {
 			setException(e);
-		} finally {
-			setState(State.STATE_COMPLETE);
 		}
 	}
 

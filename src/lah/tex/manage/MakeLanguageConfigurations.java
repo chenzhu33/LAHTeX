@@ -121,7 +121,7 @@ public class MakeLanguageConfigurations extends Task {
 							"-r",
 							environment.getTeXMFRootDirectory()
 									+ "/texmf-var/web2c" }, null);
-			make_lsr_task.run();
+			runFinalMakeLSR();
 		} catch (Exception e) {
 			setException(e);
 			return;
