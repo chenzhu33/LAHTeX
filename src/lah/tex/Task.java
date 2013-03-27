@@ -62,7 +62,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 			throws Exception {
 		if (package_file_index == null) {
 			package_file_index = environment
-					.readDataFile(IEnvironment.LAHTEX_INDEX);
+					.readLahTeXAssetFile(IEnvironment.LAHTEX_INDEX);
 		}
 		LinkedList<String> res = new LinkedList<String>();
 		int k = 0;

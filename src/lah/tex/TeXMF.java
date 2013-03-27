@@ -139,7 +139,7 @@ public class TeXMF extends TaskManager<Task> {
 		if (dropbox_keys_map == null) {
 			Map<String, String> temp_dropbox_keys_map = new TreeMap<String, String>();
 			String dbkeys = Task.environment
-					.readDataFile(IEnvironment.LAHTEX_DBKEYS);
+					.readLahTeXAssetFile(IEnvironment.LAHTEX_DBKEYS);
 			Matcher matcher = package_key_pattern.matcher(dbkeys);
 			while (matcher.find())
 				temp_dropbox_keys_map.put(matcher.group(1), matcher.group(2));

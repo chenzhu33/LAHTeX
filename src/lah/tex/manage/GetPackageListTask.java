@@ -32,7 +32,7 @@ public class GetPackageListTask extends Task {
 		try {
 			// String desc = Streams.readTextFile(environment
 			// .getPackageDescriptionFile());
-			String desc = environment.readDataFile(IEnvironment.LAHTEX_DESC);
+			String desc = environment.readLahTeXAssetFile(IEnvironment.LAHTEX_DESC);
 			Matcher matcher = line_pattern.matcher(desc);
 			List<TLPackage> temp_package_list = new ArrayList<TLPackage>();
 			while (matcher.find()) {

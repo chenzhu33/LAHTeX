@@ -186,7 +186,7 @@ public class InstallPackage extends Task {
 		// String depend_content = Streams.readTextFile(environment
 		// .getPackageDependFile());
 		String depend_content = environment
-				.readDataFile(IEnvironment.LAHTEX_DEPEND);
+				.readLahTeXAssetFile(IEnvironment.LAHTEX_DEPEND);
 		Matcher matcher = line_pattern.matcher(depend_content);
 		while (matcher.find()) {
 			String p = matcher.group(1);
