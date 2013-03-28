@@ -46,6 +46,19 @@ public class InstallPackage extends Task {
 	private static final Pattern texmf_subdir_patterns = Pattern
 			.compile("texmf.*|readme.*|tlpkg");
 
+	private static void loadDependMap() throws Exception {
+		Map<String, String[]> temp_depend = new TreeMap<String, String[]>();
+		String depend_content = environment
+				.readLahTeXAssetFile(IEnvironment.LAHTEX_DEPEND);
+		Matcher matcher = line_pattern.matcher(depend_content);
+		while (matcher.find()) {
+			String p = matcher.group(1);
+			String[] ds = single_space_pattern.split(matcher.group(2));
+			temp_depend.put(p, ds);
+		}
+		dependency_map = temp_depend;
+	}
+
 	private int num_success_packages;
 
 	private PackageState[] package_states;
@@ -64,6 +77,9 @@ public class InstallPackage extends Task {
 	 * @param pkgs
 	 */
 	private String[] addAllDependentPackages(String[] pkgs) throws Exception {
+		if (dependency_map == null)
+			loadDependMap();
+
 		// Queue containing the packages whose dependencies are to be added
 		Queue<String> queue = new LinkedList<String>();
 
@@ -86,7 +102,7 @@ public class InstallPackage extends Task {
 			// Pick a pending package & add its dependency that has not been
 			// added earlier
 			String p = queue.poll();
-			String[] pdepstr = getPackageDependency(p);
+			String[] pdepstr = dependency_map.get(p);
 			if (pdepstr != null) {
 				for (String k : pdepstr) {
 					if (k.endsWith(".ARCH"))
@@ -154,12 +170,6 @@ public class InstallPackage extends Task {
 		return installed_packages;
 	}
 
-	private String[] getPackageDependency(String pkg_name) throws Exception {
-		if (dependency_map == null)
-			loadDependMap();
-		return dependency_map.get(pkg_name);
-	}
-
 	public PackageState getPackageStatus(int position) {
 		return package_states[position];
 	}
@@ -179,21 +189,6 @@ public class InstallPackage extends Task {
 					: (num_success_packages + "/" + pending_packages.length + " packages installed");
 		else
 			return super.getStatusString();
-	}
-
-	private void loadDependMap() throws Exception {
-		Map<String, String[]> temp_depend = new TreeMap<String, String[]>();
-		// String depend_content = Streams.readTextFile(environment
-		// .getPackageDependFile());
-		String depend_content = environment
-				.readLahTeXAssetFile(IEnvironment.LAHTEX_DEPEND);
-		Matcher matcher = line_pattern.matcher(depend_content);
-		while (matcher.find()) {
-			String p = matcher.group(1);
-			String[] ds = single_space_pattern.split(matcher.group(2));
-			temp_depend.put(p, ds);
-		}
-		dependency_map = temp_depend;
 	}
 
 	/**
@@ -250,38 +245,36 @@ public class InstallPackage extends Task {
 		reset();
 		setState(State.STATE_EXECUTING);
 
-		String[] pkgs_to_install;
-		try {
-			pkgs_to_install = addAllDependentPackages(packages);
-		} catch (Exception e) {
-			setException(e);
-			return;
+		// compute dependency if necessary
+		num_success_packages = 0;
+		if (pending_packages == null) {
+			try {
+				pending_packages = addAllDependentPackages(packages);
+				package_states = new PackageState[pending_packages.length];
+			} catch (Exception e) {
+				setException(e);
+				return;
+			}
 		}
-		setPendingPackages(pkgs_to_install);
 
-		final String texmf_root = environment.getTeXMFRootDirectory();
 		boolean has_lualibs = false;
-		for (int i = 0; i < pkgs_to_install.length; i++) {
+		for (int i = 0; i < pending_packages.length; i++) {
 			setPackageState(i, PackageState.PACKAGE_INSTALLING);
 			// TODO Fix this: return on failure to install requested package
 			// only continue if some dependent package is missing
 			try {
 				// Retrieve the package
-				String pkf_file_name = (pkgs_to_install[i].endsWith(".ARCH") ? pkgs_to_install[i]
-						.substring(0, pkgs_to_install[i].length() - 5)
-						+ environment.getArchitecture() : pkgs_to_install[i])
-						+ PACKAGE_EXTENSION;
-				File pkg_file = file_supplier.getFile(pkf_file_name);
+				File pkg_file = environment.getPackage(pending_packages[i]);
 				if (pkg_file == null) {
 					setPackageState(i, PackageState.PACKAGE_FAIL);
 					continue;
 				}
-
-				// Copy the package to TeXMF root (if necessary)
+				// Copy the package file to TeXMF root (if necessary)
 				if (!pkg_file.getParentFile().getAbsolutePath()
-						.equals(texmf_root)) {
-					File new_pkg_file = new File(texmf_root + "/"
-							+ pkg_file.getName());
+						.equals(environment.getTeXMFRootDirectory())) {
+					File new_pkg_file = new File(
+							environment.getTeXMFRootDirectory() + "/"
+									+ pkg_file.getName());
 					Streams.streamToFile(new FileInputStream(pkg_file),
 							new_pkg_file, true, false);
 					pkg_file = new_pkg_file;
@@ -291,7 +284,7 @@ public class InstallPackage extends Task {
 						"xf", pkg_file.getName() }, pkg_file.getParentFile());
 				setPackageState(i, PackageState.PACKAGE_SUCCESSFULLY_INSTALLED);
 				has_lualibs = has_lualibs
-						|| pkgs_to_install[i].equals("lualibs");
+						|| pending_packages[i].equals("lualibs");
 			} catch (SystemFileNotFoundException e) {
 				setException(e);
 				return;
@@ -311,19 +304,10 @@ public class InstallPackage extends Task {
 		}
 	}
 
-	public void setPackageState(int package_id, PackageState package_state) {
+	private void setPackageState(int package_id, PackageState package_state) {
 		package_states[package_id] = package_state;
 		if (package_state == PackageState.PACKAGE_SUCCESSFULLY_INSTALLED)
 			num_success_packages++;
-	}
-
-	public void setPendingPackages(String[] packages) {
-		if (packages != null) {
-			// move to state installing packages
-			num_success_packages = 0;
-			pending_packages = packages;
-			package_states = new PackageState[pending_packages.length];
-		}
 	}
 
 }

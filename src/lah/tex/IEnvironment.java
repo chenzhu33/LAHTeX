@@ -1,5 +1,7 @@
 package lah.tex;
 
+import java.io.File;
+
 public interface IEnvironment {
 
 	public static final String BUSYBOX = "busybox";
@@ -13,6 +15,8 @@ public interface IEnvironment {
 	String getBusyBox() throws Exception;
 
 	String getOSFontsDirectory();
+
+	File getPackage(String package_name) throws Exception;
 
 	String getTeXMFBinaryDirectory();
 

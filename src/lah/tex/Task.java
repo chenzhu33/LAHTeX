@@ -2,9 +2,7 @@ package lah.tex;
 
 import java.util.LinkedList;
 
-import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.interfaces.IResult;
-import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.exceptions.SolvableException;
 import lah.tex.manage.MakeLSR;
@@ -34,11 +32,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected static IEnvironment environment;
 
-	protected static IFileSupplier file_supplier;
-
 	protected static MakeLSR make_lsr_task;
-
-	protected static TaskManager<Task> manager;
 
 	/**
 	 * The content of the text file "index", each line is of format

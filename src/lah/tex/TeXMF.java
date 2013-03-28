@@ -7,7 +7,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lah.spectre.Collections;
-import lah.spectre.interfaces.IFileSupplier;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.tex.compile.CompileDocument;
@@ -66,17 +65,14 @@ public class TeXMF extends TaskManager<Task> {
 
 	private static TeXMF texmf_instance;
 
-	public static final TeXMF getInstance(IEnvironment environment,
-			IFileSupplier file_supplier) {
+	public static final TeXMF getInstance(IEnvironment environment) {
 		if (texmf_instance == null)
-			texmf_instance = new TeXMF(environment, file_supplier);
+			texmf_instance = new TeXMF(environment);
 		return texmf_instance;
 	}
 
-	private TeXMF(IEnvironment environment, IFileSupplier file_supplier) {
+	private TeXMF(IEnvironment environment) {
 		Task.environment = environment;
-		Task.file_supplier = file_supplier;
-		Task.manager = this;
 		Task.shell = new TimedShell();
 		Task.make_lsr_task = new MakeLSR();
 

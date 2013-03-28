@@ -26,13 +26,14 @@ public class InstallSystemFile extends Task {
 		reset();
 		try {
 			setState(State.STATE_EXECUTING);
-			File system_file = file_supplier.getFile(system_file_name + ".gz");
+			File system_file = new File("/"); // file_supplier.getFile(system_file_name
+												// + ".gz");
 			InputStream file_stream = new GZIPInputStream(new FileInputStream(
 					system_file));
 			File target_file = new File(environment.getTeXMFBinaryDirectory()
 					+ "/" + system_file_name);
 			Streams.streamToFile(file_stream, target_file, true, false);
-			target_file.setExecutable(true);
+			// target_file.setExecutable(true);
 			system_file.delete();
 			setState(State.STATE_COMPLETE);
 		} catch (Exception e) {
