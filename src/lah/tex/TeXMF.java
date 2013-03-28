@@ -72,6 +72,7 @@ public class TeXMF extends TaskManager<Task> {
 	}
 
 	private TeXMF(IEnvironment environment) {
+		Task.task_manager = this;
 		Task.environment = environment;
 		Task.shell = new TimedShell();
 		Task.make_lsr_task = new MakeLSR();

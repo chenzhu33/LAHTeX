@@ -44,6 +44,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected static TimedShell shell;
 
+	protected static TeXMF task_manager;
+
 	/**
 	 * Find all packages containing a file
 	 * 
@@ -152,8 +154,16 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		this.state = State.STATE_COMPLETE;
 		if (exception instanceof SolvableException) {
 			try {
-				((SolvableException) exception).identifySolution();
+				SolvableException e = (SolvableException) exception;
+				e.identifySolution();
+				if (e.hasSolution()) {
+					task_manager.add(e.getSolution());
+					task_manager.add(this);
+				}
 			} catch (Exception e) {
+				// TODO this potentially go into a loop so we need to bound the
+				// recursion explicitly; for example, check if the exception is
+				// already thrown earlier
 				setException(e);
 			}
 		}
