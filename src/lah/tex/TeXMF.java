@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import lah.spectre.Collections;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
+import lah.spectre.stream.StreamRedirector;
 import lah.tex.compile.CompileDocument;
 import lah.tex.exceptions.SolvableException;
 import lah.tex.manage.InstallPackage;
@@ -148,6 +149,31 @@ public class TeXMF extends TaskManager<Task> {
 				+ InstallPackage.PACKAGE_EXTENSION);
 	}
 
+	/**
+	 * Attempt to mount a temporary file system to boost performance
+	 * 
+	 * @return
+	 */
+	public boolean mountTempFS() {
+		try {
+			Task.shell.fork(new String[] { "su" }, null,
+					StreamRedirector.STDOUT, 600000);
+			Task.shell.fork(
+					new String[] {
+							"mount",
+							"-t",
+							"tmpfs",
+							"/dev/ram",
+							Task.environment.getTeXMFRootDirectory()
+									+ "/texmf-var/tmp" }, null,
+					StreamRedirector.STDOUT, 600000);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace(System.out);
+			return false;
+		}
+	}
+
 	public void resetAndAdd(Task task) {
 		task.reset();
 		add(task);
@@ -162,6 +188,28 @@ public class TeXMF extends TaskManager<Task> {
 			// re-queue task for retry
 			// TODO set dependency: only start when the solution task completes
 			resetAndAdd(task);
+		}
+	}
+
+	/**
+	 * Unmount the temporary file system
+	 * 
+	 * @return
+	 */
+	public boolean unmountTempFS() {
+		try {
+			Task.shell.fork(new String[] { "su" }, null,
+					StreamRedirector.STDOUT, 600000);
+			Task.shell.fork(
+					new String[] {
+							"umount",
+							Task.environment.getTeXMFRootDirectory()
+									+ "/texmf-var/tmp" }, null,
+					StreamRedirector.STDOUT, 600000);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace(System.out);
+			return false;
 		}
 	}
 
