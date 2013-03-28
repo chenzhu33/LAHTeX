@@ -276,6 +276,15 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		output_buffer.delete(0, output_buffer.length());
 	}
 
+	protected void checkProgram(String program) throws Exception {
+		File program_file = new File(environment.getTeXMFBinaryDirectory() + "/" + program);
+		if (program_file.exists()) {
+			makeTEXMFCNF();
+		} else {
+			throw new TeXMFFileNotFoundException(program_file.getName(), null);
+		}
+	}
+
 	@Override
 	public void run() {
 		reset();
@@ -283,12 +292,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		if (tex_src_file.exists()) {
 			try {
 				chmodAllEngines();
-				File program_file = new File(environment.getTeXMFBinaryDirectory() + "/" + command[0]);
-				if (program_file.exists()) {
-					makeTEXMFCNF();
-				} else {
-					throw new TeXMFFileNotFoundException(program_file.getName(), null);
-				}
+				checkProgram(command[0]);
 				// compile the input file using the engine
 				shell.fork(command, tex_src_file.getParentFile(), null, this,
 						timeout <= 0 ? default_compilation_timeout : timeout);

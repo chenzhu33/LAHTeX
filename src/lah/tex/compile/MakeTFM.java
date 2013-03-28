@@ -11,6 +11,11 @@ public class MakeTFM extends CompileDocument {
 	}
 
 	@Override
+	public String getDescription() {
+		return "Make TeX Font Metric (TFM) file " + name + ".tfm";
+	}
+
+	@Override
 	public void run() {
 		reset();
 		int mag = 1;
@@ -20,6 +25,7 @@ public class MakeTFM extends CompileDocument {
 		tfm_loc.mkdirs();
 		setDefaultFileExtension("mf");
 		try {
+			checkProgram("mf");
 			shell.fork(new String[] { "mf", arg }, tfm_loc, this, default_compilation_timeout);
 			runFinalMakeLSR();
 		} catch (Exception e) {

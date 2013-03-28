@@ -93,6 +93,7 @@ public class MakeFMT extends CompileDocument {
 				fmt_loc.mkdirs();
 
 			// Now create and run the process to generate the format file
+			checkProgram(command[0]);
 			shell.fork(command, fmt_loc, this, default_compilation_timeout);
 			runFinalMakeLSR();
 		} catch (Exception e) {

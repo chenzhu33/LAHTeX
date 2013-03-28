@@ -13,6 +13,11 @@ public class MakePK extends CompileDocument {
 		this.kpse_command = command;
 	}
 
+	@Override
+	public String getDescription() {
+		return "Make Packed Bitmap (PK) font";
+	}
+
 	/**
 	 * Guess the MetaFont mode from the based device DPI
 	 * 
@@ -70,7 +75,9 @@ public class MakePK extends CompileDocument {
 		pk_loc.mkdirs();
 		setDefaultFileExtension("mf");
 		try {
+			checkProgram("mf");
 			shell.fork(new String[] { "mf", arg }, pk_loc, this, default_compilation_timeout);
+			checkProgram("gftopk");
 			shell.fork(new String[] { "gftopk", gf_name, pk_name }, pk_loc);
 			runFinalMakeLSR();
 		} catch (Exception e) {
