@@ -52,8 +52,7 @@ public class MakePK extends CompileDocument {
 	public void run() {
 		reset();
 		String[] args = kpse_command.split("\\s+");
-		Map<String, String> arg_map = CommandLineArguments
-				.parseCommandLineArguments(args);
+		Map<String, String> arg_map = CommandLineArguments.parseCommandLineArguments(args);
 		String name = arg_map.get("$ARG");
 		String dpi_str = arg_map.get("--dpi");
 		int dpi = (dpi_str != null ? Integer.parseInt(dpi_str) : 600);
@@ -64,17 +63,14 @@ public class MakePK extends CompileDocument {
 
 		if (mfmode == null || mfmode.equals("/"))
 			mfmode = guessModeFromBDPI(bdpi);
-		String arg = "\\mode:=" + mfmode + "; \\mag:=" + mag
-				+ "; nonstopmode; input " + name;
+		String arg = "\\mode:=" + mfmode + "; \\mag:=" + mag + "; nonstopmode; input " + name;
 		String gf_name = name + "." + dpi + "gf";
 		String pk_name = name + "." + dpi + "pk";
-		File pk_loc = new File(environment.getTeXMFRootDirectory()
-				+ "/texmf-var/fonts/pk/" + mfmode + "/tmp/dpi" + dpi);
+		File pk_loc = new File(environment.getTeXMFRootDirectory() + "/texmf-var/fonts/pk/" + mfmode + "/tmp/dpi" + dpi);
 		pk_loc.mkdirs();
 		setDefaultFileExtension("mf");
 		try {
-			shell.fork(new String[] { "mf", arg }, pk_loc, this,
-					default_compilation_timeout);
+			shell.fork(new String[] { "mf", arg }, pk_loc, this, default_compilation_timeout);
 			shell.fork(new String[] { "gftopk", gf_name, pk_name }, pk_loc);
 			runFinalMakeLSR();
 		} catch (Exception e) {

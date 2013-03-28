@@ -54,11 +54,9 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 * @return List of names of packages containing file
 	 * @throws Exception
 	 */
-	public static String[] findPackagesWithFile(String file_query)
-			throws Exception {
+	public static String[] findPackagesWithFile(String file_query) throws Exception {
 		if (package_file_index == null) {
-			package_file_index = environment
-					.readLahTeXAssetFile(IEnvironment.LAHTEX_INDEX);
+			package_file_index = environment.readLahTeXAsset(IEnvironment.LAHTEX_INDEX);
 		}
 		LinkedList<String> res = new LinkedList<String>();
 		int k = 0;

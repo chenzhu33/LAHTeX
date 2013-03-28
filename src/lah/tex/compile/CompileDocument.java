@@ -34,12 +34,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	/**
 	 * Standard output patterns
 	 */
-	private static final Pattern badboxPattern = Pattern
-			.compile("(Over|Under)(full \\\\[hv]box .*)"),
-			errorPattern = Pattern.compile("! (.*)"),
-			lineNumberPattern = Pattern
-					.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"),
-			warningPattern = Pattern
+	private static final Pattern badboxPattern = Pattern.compile("(Over|Under)(full \\\\[hv]box .*)"),
+			errorPattern = Pattern.compile("! (.*)"), lineNumberPattern = Pattern
+					.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"), warningPattern = Pattern
 					.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)");
 
 	/**
@@ -66,17 +63,14 @@ public class CompileDocument extends Task implements IBufferProcessor {
 
 	private StringBuilder accumulated_error_message;
 
-	final Matcher badboxMatcher = badboxPattern.matcher(""),
-			errorMatcher = errorPattern.matcher(""),
-			lineNumberMatcher = lineNumberPattern.matcher(""),
-			warningMatcher = warningPattern.matcher("");
+	final Matcher badboxMatcher = badboxPattern.matcher(""), errorMatcher = errorPattern.matcher(""),
+			lineNumberMatcher = lineNumberPattern.matcher(""), warningMatcher = warningPattern.matcher("");
 
 	protected String[] command;
 
 	protected String default_file_extension = "tex";
 
-	private final Matcher kpathsea_matcher = Pattern.compile(
-			"kpathsea: Running (.+)\\s*").matcher("");
+	private final Matcher kpathsea_matcher = Pattern.compile("kpathsea: Running (.+)\\s*").matcher("");
 
 	private List<LogLine> logs;
 
@@ -84,30 +78,20 @@ public class CompileDocument extends Task implements IBufferProcessor {
 
 	private boolean pdftex_error = false;
 
-	private final Matcher pdftex_error_end = Pattern.compile(
-			" ==> Fatal error occurred, no output PDF file produced!").matcher(
-			""), pdftex_error_start = Pattern.compile("!pdfTeX error: .+")
-			.matcher(""), pdftex_missing_file_matcher = Pattern.compile(
-			"!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
+	private final Matcher pdftex_error_end = Pattern.compile(" ==> Fatal error occurred, no output PDF file produced!")
+			.matcher(""), pdftex_error_start = Pattern.compile("!pdfTeX error: .+").matcher(""),
+			pdftex_missing_file_matcher = Pattern.compile("!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
 
-	private final Matcher single_line_matcher = Pattern.compile("(.+)\n")
-			.matcher("");
+	private final Matcher single_line_matcher = Pattern.compile("(.+)\n").matcher("");
 
 	protected String tex_engine;
 
 	private final Matcher[] tex_missing_file_matchers = {
-			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*")
-					.matcher(""),
+			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*").matcher(""),
 			Pattern.compile("! I can't find file `([^`']*)'.*").matcher(""),
-			Pattern.compile(
-					"! Package fontenc Error: Encoding file `([^`']*)' not found.")
-					.matcher(""),
-			Pattern.compile(
-					"Could not open config file \"(dvipdfmx\\.cfg)\"\\.")
-					.matcher(""),
-			Pattern.compile(
-					"! OOPS! I can't find any hyphenation patterns for US english.")
-					.matcher(""), };
+			Pattern.compile("! Package fontenc Error: Encoding file `([^`']*)' not found.").matcher(""),
+			Pattern.compile("Could not open config file \"(dvipdfmx\\.cfg)\"\\.").matcher(""),
+			Pattern.compile("! OOPS! I can't find any hyphenation patterns for US english.").matcher(""), };
 
 	private File tex_src_file;
 
@@ -122,16 +106,13 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	public CompileDocument(String tex_engine, String tex_src) {
 		this.tex_engine = tex_engine;
 		this.tex_src_file = new File(tex_src);
-		String input_file_no_ext = FileName.removeFileExtension(tex_src_file
-				.getName());
+		String input_file_no_ext = FileName.removeFileExtension(tex_src_file.getName());
 		if (tex_engine.equals("bibtex") || tex_engine.equals("makeindex"))
 			this.command = new String[] { tex_engine, input_file_no_ext };
 		else {
-			String tex_fmt = tex_engine.equals("pdftex") ? "pdfetex"
-					: tex_engine;
-			this.command = new String[] { getProgramFromFormat(tex_engine),
-					"-interaction=nonstopmode", "-fmt=" + tex_fmt,
-					tex_src_file.getName() };
+			String tex_fmt = tex_engine.equals("pdftex") ? "pdfetex" : tex_engine;
+			this.command = new String[] { getProgramFromFormat(tex_engine), "-interaction=nonstopmode",
+					"-fmt=" + tex_fmt, tex_src_file.getName() };
 		}
 	}
 
@@ -158,11 +139,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	 * @throws Exception
 	 */
 	private boolean chmodAllEngines() throws Exception {
-		File bindir = new File(environment.getTeXMFBinaryDirectory()
-				+ "/../../");
+		File bindir = new File(environment.getTeXMFBinaryDirectory() + "/../../");
 		if (bindir.exists() && bindir.isDirectory()) {
-			shell.fork(new String[] { environment.getBusyBox(), "chmod", "-R",
-					"700", "." }, bindir);
+			shell.fork(new String[] { environment.getBusyBox(), "chmod", "-R", "700", "." }, bindir);
 			return true;
 		}
 		return true;
@@ -199,9 +178,8 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	}
 
 	public String getOutputType() {
-		if (tex_engine.equals("pdftex") || tex_engine.equals("pdflatex")
-				|| tex_engine.equals("xetex") || tex_engine.equals("xelatex")
-				|| tex_engine.equals("luatex") || tex_engine.equals("lualatex"))
+		if (tex_engine.equals("pdftex") || tex_engine.equals("pdflatex") || tex_engine.equals("xetex")
+				|| tex_engine.equals("xelatex") || tex_engine.equals("luatex") || tex_engine.equals("lualatex"))
 			return "pdf";
 		else if (tex_engine.equals("tex") || tex_engine.equals("latex"))
 			return "dvi";
@@ -219,24 +197,19 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	 * @throws Exception
 	 */
 	public void makeTEXMFCNF() throws Exception {
-		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory()
-				+ "/texmf.cnf");
+		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory() + "/texmf.cnf");
 		if (!texmfcnf_file.exists()) {
-			File texmfcnf_src = new File(environment.getTeXMFRootDirectory()
-					+ "/texmf/web2c/texmf.cnf");
+			File texmfcnf_src = new File(environment.getTeXMFRootDirectory() + "/texmf/web2c/texmf.cnf");
 			if (!texmfcnf_src.exists()) {
 				throw new TeXMFFileNotFoundException("texmf.cnf", null);
 			}
-			BufferedReader reader = new BufferedReader(new FileReader(
-					texmfcnf_src));
+			BufferedReader reader = new BufferedReader(new FileReader(texmfcnf_src));
 			FileWriter writer = new FileWriter(texmfcnf_file);
 			String line;
 			while ((line = reader.readLine()) != null) {
 				if (line.startsWith("TEXMFROOT"))
-					writer.write("TEXMFROOT = "
-							+ environment.getTeXMFRootDirectory() + "\n");
-				else if (line.startsWith("TEXMFVAR")
-						&& environment.isPortable())
+					writer.write("TEXMFROOT = " + environment.getTeXMFRootDirectory() + "\n");
+				else if (line.startsWith("TEXMFVAR") && environment.isPortable())
 					writer.write("TEXMFVAR = $TEXMFSYSVAR\n");
 				else
 					writer.write(line + "\n");
@@ -269,10 +242,8 @@ public class CompileDocument extends Task implements IBufferProcessor {
 				if (pdftex_error_end.reset(line).matches()) {
 					pdftex_error = false;
 					// now we parse the error for missing file
-					if (pdftex_missing_file_matcher.reset(
-							accumulated_error_message).matches()) {
-						throw new TeXMFFileNotFoundException(
-								pdftex_missing_file_matcher.group(1),
+					if (pdftex_missing_file_matcher.reset(accumulated_error_message).matches()) {
+						throw new TeXMFFileNotFoundException(pdftex_missing_file_matcher.group(1),
 								default_file_extension);
 					}
 				} else {
@@ -290,11 +261,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			for (int i = 0; i < tex_missing_file_matchers.length; i++) {
 				if (tex_missing_file_matchers[i].reset(line).find()) {
 					if (i == tex_missing_file_matchers.length - 1)
-						throw new TeXMFFileNotFoundException("hyphen.tex",
-								default_file_extension);
+						throw new TeXMFFileNotFoundException("hyphen.tex", default_file_extension);
 					else
-						throw new TeXMFFileNotFoundException(
-								tex_missing_file_matchers[i].group(1),
+						throw new TeXMFFileNotFoundException(tex_missing_file_matchers[i].group(1),
 								default_file_extension);
 				}
 			}
@@ -314,14 +283,11 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		if (tex_src_file.exists()) {
 			try {
 				chmodAllEngines();
-				File program_file = new File(
-						environment.getTeXMFBinaryDirectory() + "/"
-								+ command[0]);
+				File program_file = new File(environment.getTeXMFBinaryDirectory() + "/" + command[0]);
 				if (program_file.exists()) {
 					makeTEXMFCNF();
 				} else {
-					throw new TeXMFFileNotFoundException(
-							program_file.getName(), null);
+					throw new TeXMFFileNotFoundException(program_file.getName(), null);
 				}
 				// compile the input file using the engine
 				shell.fork(command, tex_src_file.getParentFile(), null, this,
@@ -333,8 +299,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 				setState(State.STATE_COMPLETE);
 			}
 		} else {
-			setException(new FileNotFoundException(tex_src_file
-					+ " does not exist!"));
+			setException(new FileNotFoundException(tex_src_file + " does not exist!"));
 			setState(State.STATE_COMPLETE);
 		}
 	}

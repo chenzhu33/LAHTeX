@@ -61,8 +61,7 @@ public class TeXMF extends TaskManager<Task> {
 	/**
 	 * Pattern for lines in lahtex_dbkeys
 	 */
-	private static final Pattern package_key_pattern = Pattern
-			.compile("([^ ]+) (.*)\n");
+	private static final Pattern package_key_pattern = Pattern.compile("([^ ]+) (.*)\n");
 
 	private static TeXMF texmf_instance;
 
@@ -81,12 +80,10 @@ public class TeXMF extends TaskManager<Task> {
 		// Set up environment variables such as PATH, TMPDIR, FONTCONFIG
 		// (for XeTeX to work) and OSFONTDIR (for LuaTeX font search)
 		// TODO set TEXMFCNF to the search locations of texmf.cnf as well
-		String path = environment.getTeXMFBinaryDirectory() + ":"
-				+ System.getenv("PATH");
+		String path = environment.getTeXMFBinaryDirectory() + ":" + System.getenv("PATH");
 		String tmpdir = environment.getTeXMFRootDirectory() + "/texmf-var/tmp";
 		new File(tmpdir + "/").mkdirs();
-		String fontconfig_path = environment.getTeXMFRootDirectory()
-				+ "/texmf-var/fonts/conf";
+		String fontconfig_path = environment.getTeXMFRootDirectory() + "/texmf-var/fonts/conf";
 		new File(fontconfig_path + "/").mkdirs();
 		Task.shell.export("PATH", path);
 		Task.shell.export("TMPDIR", tmpdir);
@@ -105,8 +102,7 @@ public class TeXMF extends TaskManager<Task> {
 	 * @return A new {@link Task} created, added for scheduling
 	 */
 	public Task createTask(TaskType task_type, String[] args) {
-		System.out.println("Create task "
-				+ Collections.stringOfArray(args, ", ", "[", "]"));
+		System.out.println("Create task " + Collections.stringOfArray(args, ", ", "[", "]"));
 		Task result_task;
 		switch (task_type) {
 		case TASK_COMPILE:
@@ -136,17 +132,14 @@ public class TeXMF extends TaskManager<Task> {
 	public String getDropboxPackageURL(String package_name) throws Exception {
 		if (dropbox_keys_map == null) {
 			Map<String, String> temp_dropbox_keys_map = new TreeMap<String, String>();
-			String dbkeys = Task.environment
-					.readLahTeXAssetFile(IEnvironment.LAHTEX_DBKEYS);
+			String dbkeys = Task.environment.readLahTeXAsset(IEnvironment.LAHTEX_DBKEYS);
 			Matcher matcher = package_key_pattern.matcher(dbkeys);
 			while (matcher.find())
 				temp_dropbox_keys_map.put(matcher.group(1), matcher.group(2));
 			dropbox_keys_map = temp_dropbox_keys_map;
 		}
-		String key = (dropbox_keys_map == null ? null : dropbox_keys_map
-				.get(package_name));
-		return (key == null ? null : DROPBOX_ARCHIVE + key + "/" + package_name
-				+ InstallPackage.PACKAGE_EXTENSION);
+		String key = (dropbox_keys_map == null ? null : dropbox_keys_map.get(package_name));
+		return (key == null ? null : DROPBOX_ARCHIVE + key + "/" + package_name + InstallPackage.PACKAGE_EXTENSION);
 	}
 
 	/**
@@ -156,17 +149,10 @@ public class TeXMF extends TaskManager<Task> {
 	 */
 	public boolean mountTempFS() {
 		try {
-			Task.shell.fork(new String[] { "su" }, null,
-					StreamRedirector.STDOUT, 600000);
-			Task.shell.fork(
-					new String[] {
-							"mount",
-							"-t",
-							"tmpfs",
-							"/dev/ram",
-							Task.environment.getTeXMFRootDirectory()
-									+ "/texmf-var/tmp" }, null,
-					StreamRedirector.STDOUT, 600000);
+			Task.shell.fork(new String[] { "su" }, null, StreamRedirector.STDOUT, 600000);
+			Task.shell.fork(new String[] { "mount", "-t", "tmpfs", "/dev/ram",
+					Task.environment.getTeXMFRootDirectory() + "/texmf-var/tmp" }, null, StreamRedirector.STDOUT,
+					600000);
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace(System.out);
@@ -180,8 +166,7 @@ public class TeXMF extends TaskManager<Task> {
 	}
 
 	public void resolve(Task task) {
-		if (task != null && task.hasException()
-				&& task.exception instanceof SolvableException
+		if (task != null && task.hasException() && task.exception instanceof SolvableException
 				&& ((SolvableException) task.exception).hasSolution()) {
 			add(((SolvableException) task.exception).getSolution());
 			task.reset();
@@ -198,14 +183,9 @@ public class TeXMF extends TaskManager<Task> {
 	 */
 	public boolean unmountTempFS() {
 		try {
-			Task.shell.fork(new String[] { "su" }, null,
-					StreamRedirector.STDOUT, 600000);
-			Task.shell.fork(
-					new String[] {
-							"umount",
-							Task.environment.getTeXMFRootDirectory()
-									+ "/texmf-var/tmp" }, null,
-					StreamRedirector.STDOUT, 600000);
+			Task.shell.fork(new String[] { "su" }, null, StreamRedirector.STDOUT, 600000);
+			Task.shell.fork(new String[] { "umount", Task.environment.getTeXMFRootDirectory() + "/texmf-var/tmp" },
+					null, StreamRedirector.STDOUT, 600000);
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace(System.out);

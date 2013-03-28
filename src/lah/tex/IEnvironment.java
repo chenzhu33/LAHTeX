@@ -6,9 +6,8 @@ public interface IEnvironment {
 
 	public static final String BUSYBOX = "busybox";
 
-	public static final String LAHTEX_DEPEND = "depend.lahtex",
-			LAHTEX_INDEX = "index.lahtex", LAHTEX_DESC = "desc.lahtex",
-			LAHTEX_DBKEYS = "dbkeys.lahtex";
+	public static final String LAHTEX_DEPEND = "depend.lahtex", LAHTEX_INDEX = "index.lahtex",
+			LAHTEX_DESC = "desc.lahtex", LAHTEX_DBKEYS = "dbkeys.lahtex";
 
 	String getArchitecture();
 
@@ -24,6 +23,6 @@ public interface IEnvironment {
 
 	boolean isPortable();
 
-	String readLahTeXAssetFile(String asset_file_name) throws Exception;
+	String readLahTeXAsset(String asset_file_name) throws Exception;
 
 }

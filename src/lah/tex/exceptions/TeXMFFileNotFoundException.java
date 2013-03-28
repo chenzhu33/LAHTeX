@@ -15,8 +15,7 @@ public class TeXMFFileNotFoundException extends SolvableException {
 	protected TeXMFFileNotFoundException() {
 	}
 
-	public TeXMFFileNotFoundException(String missing_file,
-			String default_file_extension) {
+	public TeXMFFileNotFoundException(String missing_file, String default_file_extension) {
 		if (missing_file.indexOf('.') < 0 && default_file_extension != null)
 			this.missing_file = missing_file + "." + default_file_extension;
 		else
@@ -28,15 +27,13 @@ public class TeXMFFileNotFoundException extends SolvableException {
 		return "Missing "
 				+ missing_file
 				+ (missing_packages != null ? ". Probably package "
-						+ Collections.stringOfArray(missing_packages, ", ",
-								null, null) + " is not installed/corrupted."
-						: "");
+						+ Collections.stringOfArray(missing_packages, ", ", null, null)
+						+ " is not installed/corrupted." : "");
 	}
 
 	@Override
 	public Task getSolution() {
-		return (missing_packages == null) ? null : new InstallPackage(
-				missing_packages);
+		return (missing_packages == null) ? null : new InstallPackage(missing_packages);
 	}
 
 	@Override
@@ -46,8 +43,7 @@ public class TeXMFFileNotFoundException extends SolvableException {
 
 	@Override
 	public void identifySolution() throws Exception {
-		if (missing_file.equals("language.dat")
-				|| missing_file.equals("language.def"))
+		if (missing_file.equals("language.dat") || missing_file.equals("language.def"))
 			// this case is necessary because we might require these files
 			// before the package index is available
 			missing_packages = new String[] { "hyphen-base" };

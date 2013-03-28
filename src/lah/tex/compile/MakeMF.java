@@ -12,19 +12,15 @@ public class MakeMF extends Task {
 	/**
 	 * Pattern for MetaFont sources
 	 */
-	private static final Pattern[] mf_font_name_patterns = new Pattern[] {
-			Pattern.compile("(ec|tc).*"),
-			Pattern.compile("dc.*"),
-			Pattern.compile("(cs|lcsss|icscsc|icstt|ilcsss).*"),
+	private static final Pattern[] mf_font_name_patterns = new Pattern[] { Pattern.compile("(ec|tc).*"),
+			Pattern.compile("dc.*"), Pattern.compile("(cs|lcsss|icscsc|icstt|ilcsss).*"),
 			Pattern.compile("(wn[bcdfirstuv]|rx[bcdfiorstuvx][bcfhilmostx]|l[abcdhl][bcdfiorstuvx]).*"),
-			Pattern.compile("g[lmorst][bijmtwx][cilnoru].*"),
-			Pattern.compile(".*") };
+			Pattern.compile("g[lmorst][bijmtwx][cilnoru].*"), Pattern.compile(".*") };
 
 	/**
 	 * Pattern for a MetaFont font name
 	 */
-	private static final Pattern mf_font_rootname_pointsize_pattern = Pattern
-			.compile("([a-z]+)([0-9]+)");
+	private static final Pattern mf_font_rootname_pointsize_pattern = Pattern.compile("([a-z]+)([0-9]+)");
 
 	private String name;
 
@@ -63,8 +59,7 @@ public class MakeMF extends Task {
 	@Override
 	public void run() {
 		reset();
-		Matcher rootname_pointsize_matcher = mf_font_rootname_pointsize_pattern
-				.matcher(name);
+		Matcher rootname_pointsize_matcher = mf_font_rootname_pointsize_pattern.matcher(name);
 		String realsize = null, rootname = null;
 		if (rootname_pointsize_matcher.matches()) {
 			rootname = rootname_pointsize_matcher.group(1);
@@ -72,8 +67,7 @@ public class MakeMF extends Task {
 			// System.out.println("Root name = " + rootname);
 			// System.out.println("Point size = " + ptsizestr);
 			if (ptsizestr.isEmpty()) {
-				setException(new Exception(
-						"Invalid point size input for mktexmf"));
+				setException(new Exception("Invalid point size input for mktexmf"));
 				return;
 			} else
 				realsize = getRealSize(Integer.parseInt(ptsizestr));
@@ -85,12 +79,9 @@ public class MakeMF extends Task {
 
 		// The content of MF source for the font name matching the pattern
 		String[] mf_content = new String[] {
-				"if unknown exbase: input exbase fi;" + "gensize:=" + realsize
-						+ ";" + "generate " + rootname + ";",
-				"if unknown dxbase: input dxbase fi;" + "gensize:=" + realsize
-						+ ";" + "generate " + rootname + ";",
-				"input cscode; use_driver;", "input fikparm;",
-				"input cbgreek;",
+				"if unknown exbase: input exbase fi;" + "gensize:=" + realsize + ";" + "generate " + rootname + ";",
+				"if unknown dxbase: input dxbase fi;" + "gensize:=" + realsize + ";" + "generate " + rootname + ";",
+				"input cscode; use_driver;", "input fikparm;", "input cbgreek;",
 				"design_size := " + realsize + ";" + "input " + rootname + ";" };
 
 		// Find the pattern that matches the font name
@@ -102,11 +93,9 @@ public class MakeMF extends Task {
 
 		// Generate the MF file
 		try {
-			String mf_font_directory = environment.getTeXMFRootDirectory()
-					+ "/texmf-var/fonts/source/";
+			String mf_font_directory = environment.getTeXMFRootDirectory() + "/texmf-var/fonts/source/";
 			new File(mf_font_directory).mkdirs();
-			FileWriter mf_output = new FileWriter(mf_font_directory + name
-					+ ".mf");
+			FileWriter mf_output = new FileWriter(mf_font_directory + name + ".mf");
 			mf_output.write(mf_content[match]);
 			mf_output.close();
 			runFinalMakeLSR();

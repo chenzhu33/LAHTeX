@@ -20,8 +20,7 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 
 	public KpathseaException(String kpathsea_command) {
 		kpse_command = kpathsea_command.trim();
-		String base_name = kpse_command
-				.substring(kpse_command.lastIndexOf(' ')).trim();
+		String base_name = kpse_command.substring(kpse_command.lastIndexOf(' ')).trim();
 		if (kpse_command.startsWith("mktextfm"))
 			missing_file = base_name + ".tfm";
 		else if (kpse_command.startsWith("mktexmf"))
@@ -40,8 +39,7 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	@Override
 	public Task getSolution() {
 		if (kpse_command.startsWith("mktexfmt"))
-			return new MakeFMT(kpse_command.substring("mktexfmt".length())
-					.trim());
+			return new MakeFMT(kpse_command.substring("mktexfmt".length()).trim());
 		else if (kpse_command.startsWith("mktexpk"))
 			return new MakePK(kpse_command);
 		else {
@@ -49,11 +47,9 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 			if (t != null)
 				return t;
 			if (kpse_command.startsWith("mktextfm"))
-				return new MakeTFM(kpse_command.substring("mktextfm".length())
-						.trim());
+				return new MakeTFM(kpse_command.substring("mktextfm".length()).trim());
 			else if (kpse_command.startsWith("mktexmf"))
-				return new MakeMF(kpse_command.substring("mktexmf".length())
-						.trim());
+				return new MakeMF(kpse_command.substring("mktexmf".length()).trim());
 			else
 				return null;
 		}

@@ -13,11 +13,9 @@ import lah.tex.exceptions.TeXMFFileNotFoundException;
 
 public class MakeLanguageConfigurations extends Task {
 
-	private static final Pattern lang_pattern = Pattern
-			.compile("% from hyphen-(.*):\n[^%]*");
+	private static final Pattern lang_pattern = Pattern.compile("% from hyphen-(.*):\n[^%]*");
 
-	private static final String[] language_files = { "language.dat",
-			"language.def" };
+	private static final String[] language_files = { "language.dat", "language.def" };
 
 	private Map<String, String> language_dat_map, language_def_map;
 
@@ -29,8 +27,7 @@ public class MakeLanguageConfigurations extends Task {
 
 	public String[] getAllLanguages() throws Exception {
 		for (String lf : language_files) {
-			File langfile = new File(environment.getTeXMFRootDirectory()
-					+ "/texmf/tex/generic/config/" + lf);
+			File langfile = new File(environment.getTeXMFRootDirectory() + "/texmf/tex/generic/config/" + lf);
 			if (!langfile.exists())
 				throw new TeXMFFileNotFoundException(lf, null);
 			String content = Streams.readTextFile(langfile);
@@ -41,11 +38,9 @@ public class MakeLanguageConfigurations extends Task {
 			else
 				lfmap = language_def_map = new TreeMap<String, String>();
 			while (langconfig_matcher.find())
-				lfmap.put(langconfig_matcher.group(1),
-						langconfig_matcher.group());
+				lfmap.put(langconfig_matcher.group(1), langconfig_matcher.group());
 		}
-		return language_dat_map.keySet().toArray(
-				new String[language_dat_map.size()]);
+		return language_dat_map.keySet().toArray(new String[language_dat_map.size()]);
 	}
 
 	@Override
@@ -60,15 +55,11 @@ public class MakeLanguageConfigurations extends Task {
 	@Override
 	public void run() {
 		reset();
-		final String texmf_language_config = environment
-				.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
+		final String texmf_language_config = environment.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
 		new File(texmf_language_config).mkdirs();
 		// Write language.dat
-		String language_dat = "english		hyphen.tex  % do not change!\n"
-				+ "=usenglish\n"
-				+ "=USenglish\n"
-				+ "=american\n"
-				+ "dumylang	dumyhyph.tex    %for testing a new language.\n"
+		String language_dat = "english		hyphen.tex  % do not change!\n" + "=usenglish\n" + "=USenglish\n"
+				+ "=american\n" + "dumylang	dumyhyph.tex    %for testing a new language.\n"
 				+ "nohyphenation	zerohyph.tex    %a language with no patterns at all.\n";
 		if (languages != null) {
 			if (language_dat_map == null)
@@ -79,12 +70,10 @@ public class MakeLanguageConfigurations extends Task {
 					return;
 				}
 			for (int i = 0; i < languages.length; i++)
-				language_dat = language_dat
-						+ language_dat_map.get(languages[i]);
+				language_dat = language_dat + language_dat_map.get(languages[i]);
 		}
 		try {
-			Streams.writeStringToFile(language_dat, new File(
-					texmf_language_config + "/language.dat"), false);
+			Streams.writeStringToFile(language_dat, new File(texmf_language_config + "/language.dat"), false);
 		} catch (IOException e) {
 			setException(e);
 			return;
@@ -101,26 +90,19 @@ public class MakeLanguageConfigurations extends Task {
 					return;
 				}
 			for (int i = 0; i < languages.length; i++)
-				language_def = language_def
-						+ language_def_map.get(languages[i]);
+				language_def = language_def + language_def_map.get(languages[i]);
 		}
 		language_def = language_def
 				+ "\\uselanguage {USenglish}             %%% This MUST be the last line of the file.\n";
 		try {
-			Streams.writeStringToFile(language_def, new File(
-					texmf_language_config + "/language.def"), false);
+			Streams.writeStringToFile(language_def, new File(texmf_language_config + "/language.def"), false);
 		} catch (IOException e) {
 			setException(e);
 			return;
 		}
 		// Regenerate path databases and remove existing format files, if any
 		try {
-			shell.fork(
-					new String[] {
-							"rm",
-							"-r",
-							environment.getTeXMFRootDirectory()
-									+ "/texmf-var/web2c" }, null);
+			shell.fork(new String[] { "rm", "-r", environment.getTeXMFRootDirectory() + "/texmf-var/web2c" }, null);
 			runFinalMakeLSR();
 		} catch (Exception e) {
 			setException(e);

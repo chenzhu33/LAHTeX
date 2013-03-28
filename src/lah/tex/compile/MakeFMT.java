@@ -11,8 +11,7 @@ public class MakeFMT extends CompileDocument {
 	/**
 	 * Pattern for TeX, MetaFont or MetaPost memory dump file
 	 */
-	private static final Pattern format_pattern = Pattern
-			.compile("([a-z]*)\\.(fmt|base|mem)");
+	private static final Pattern format_pattern = Pattern.compile("([a-z]*)\\.(fmt|base|mem)");
 
 	private static MakeLanguageConfigurations make_lang_config_task;
 
@@ -76,10 +75,8 @@ public class MakeFMT extends CompileDocument {
 			// Regenerate path database to make sure that necessary input
 			// files to make memory dumps (*.ini, *.mf, *.tex, ...) are
 			// found
-			if (!new File(environment.getTeXMFRootDirectory()
-					+ "/texmf-var/tex/generic/config/language.dat").exists()
-					|| !new File(environment.getTeXMFRootDirectory()
-							+ "/texmf-var/tex/generic/config/language.def")
+			if (!new File(environment.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config/language.dat").exists()
+					|| !new File(environment.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config/language.def")
 							.exists()) {
 				if (make_lang_config_task == null)
 					make_lang_config_task = new MakeLanguageConfigurations(null);
@@ -91,8 +88,7 @@ public class MakeFMT extends CompileDocument {
 			}
 
 			// Location of the memory dump file
-			File fmt_loc = new File(environment.getTeXMFRootDirectory()
-					+ "/texmf-var/web2c/" + tex_engine);
+			File fmt_loc = new File(environment.getTeXMFRootDirectory() + "/texmf-var/web2c/" + tex_engine);
 			if (!fmt_loc.exists())
 				fmt_loc.mkdirs();
 
