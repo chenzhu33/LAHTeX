@@ -6,7 +6,6 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lah.spectre.Collections;
 import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.StreamRedirector;
@@ -41,11 +40,7 @@ public class TeXMF extends TaskManager<Task> {
 		/**
 		 * Generate language configurations (hyphenation patterns)
 		 */
-		TASK_MAKE_LANGUAGES_CONFIG,
-		/**
-		 * Do not execute anything
-		 */
-		TASK_NULL
+		TASK_MAKE_LANGUAGES_CONFIG
 	}
 
 	/**
@@ -102,7 +97,6 @@ public class TeXMF extends TaskManager<Task> {
 	 * @return A new {@link Task} created, added for scheduling
 	 */
 	public Task createTask(TaskType task_type, String[] args) {
-		System.out.println("Create task " + Collections.stringOfArray(args, ", ", "[", "]"));
 		Task result_task;
 		switch (task_type) {
 		case TASK_COMPILE:
