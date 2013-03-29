@@ -26,7 +26,7 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 		else if (kpse_command.startsWith("mktexmf"))
 			missing_file = base_name + ".mf";
 		else if (kpse_command.startsWith("mktexpk"))
-			missing_file = base_name + ".pk";
+			missing_file = base_name.indexOf('.') >= 0 ? base_name : base_name + ".pk";
 		else
 			// format file *.(fmt|base|mem)
 			missing_file = base_name;
@@ -40,23 +40,22 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	public Task getSolution() {
 		if (kpse_command.startsWith("mktexfmt"))
 			return new MakeFMT(kpse_command.substring("mktexfmt".length()).trim());
-		else if (kpse_command.startsWith("mktexpk"))
-			return new MakePK(kpse_command);
-		else {
-			Task t = super.getSolution();
-			if (t != null)
-				return t;
-			if (kpse_command.startsWith("mktextfm"))
-				return new MakeTFM(kpse_command.substring("mktextfm".length()).trim());
-			else if (kpse_command.startsWith("mktexmf"))
-				return new MakeMF(kpse_command.substring("mktexmf".length()).trim());
-			else
-				return null;
-		}
+		Task t = super.getSolution();
+		if (t != null)
+			return t;
+		if (kpse_command.startsWith("mktexpk"))
+			return new MakePK(kpse_command, missing_file);
+		else if (kpse_command.startsWith("mktextfm"))
+			return new MakeTFM(kpse_command.substring("mktextfm".length()).trim());
+		else if (kpse_command.startsWith("mktexmf"))
+			return new MakeMF(kpse_command.substring("mktexmf".length()).trim());
+		else
+			return null;
 	}
 
 	@Override
 	public boolean hasSolution() {
+		// This depends on whether getSolution return non-null or not!?
 		return true;
 	}
 

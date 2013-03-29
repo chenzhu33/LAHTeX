@@ -7,15 +7,16 @@ import lah.spectre.CommandLineArguments;
 
 public class MakePK extends CompileDocument {
 
-	private String kpse_command;
+	private String kpse_command, missing_file;
 
-	public MakePK(String command) {
+	public MakePK(String command, String missing_file) {
 		this.kpse_command = command;
+		this.missing_file = missing_file;
 	}
 
 	@Override
 	public String getDescription() {
-		return "Make Packed Bitmap (PK) font";
+		return "Make PK font" + missing_file;
 	}
 
 	/**

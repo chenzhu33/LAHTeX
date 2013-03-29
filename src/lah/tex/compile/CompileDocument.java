@@ -229,7 +229,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			line = single_line_matcher.group(1);
 
 			// Always append the log
-			// texmf_result.appendLog(line);
+			appendLog(line);
 			output_buffer.delete(0, single_line_matcher.end());
 
 			// Get pdfTeX error: go to accumulation state
@@ -254,8 +254,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			}
 
 			// Get Kpathsea error if any
-			if (kpathsea_matcher.reset(line).matches())
+			if (kpathsea_matcher.reset(line).matches()) {
 				throw new KpathseaException(kpathsea_matcher.group(1));
+			}
 
 			// Looking for missing TeX|MF files
 			for (int i = 0; i < tex_missing_file_matchers.length; i++) {

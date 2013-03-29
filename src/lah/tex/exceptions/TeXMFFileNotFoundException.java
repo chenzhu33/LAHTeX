@@ -26,9 +26,9 @@ public class TeXMFFileNotFoundException extends SolvableException {
 	public String getMessage() {
 		return "Missing "
 				+ missing_file
-				+ (missing_packages != null ? ". Probably package "
+				+ (missing_packages == null ? "" : "\nProbably package "
 						+ Collections.stringOfArray(missing_packages, ", ", null, null)
-						+ " is not installed/corrupted." : "");
+						+ (missing_packages.length > 1 ? " are" : " is") + " either not installed or corrupted.");
 	}
 
 	@Override
