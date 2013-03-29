@@ -24,7 +24,7 @@ public class MakeLSR extends Task {
 	public MakeLSR() {
 		texmf_dirs_files = new File[texmf_dirs.length];
 		for (int i = 0; i < texmf_dirs.length; i++) {
-			texmf_dirs_files[i] = new File(environment.getTeXMFRootDirectory() + "/" + texmf_dirs[i]);
+			texmf_dirs_files[i] = new File(environment.getTeXMFRootDirectory(), texmf_dirs[i] + "/");
 		}
 	}
 
@@ -36,25 +36,25 @@ public class MakeLSR extends Task {
 	@Override
 	public void run() {
 		reset();
-		for (int i = 0; i < texmf_dirs.length; i++) {
-			File texmf_dir = new File(environment.getTeXMFRootDirectory() + "/" + texmf_dirs[i]);
-
+		setState(State.STATE_EXECUTING);
+		for (int i = 0; i < texmf_dirs_files.length; i++) {
+			// System.out.println("Make lsr in directory " + texmf_dirs[i]);
+			File texmf_dir = texmf_dirs_files[i];
 			// Skip non-existing texmf directory, is not a directory or
 			// cannot read/write/execute: skip it
-			if (!texmf_dir.exists()
-					|| (!(texmf_dir.isDirectory() && texmf_dir.canRead() && texmf_dir.canWrite() && texmf_dir
-							.canExecute())))
+			if (!texmf_dir.exists() || (!(texmf_dir.isDirectory() && texmf_dir.canRead() && texmf_dir.canWrite())))
+				// && texmf_dir.canExecute()
 				continue;
 
 			// Delete the ls-R before doing path generation
-			File lsRfile = new File(texmf_dir + "/ls-R");
+			File lsRfile = new File(texmf_dirs_files[i], "ls-R");
 			if (lsRfile.exists() && lsRfile.isFile()) {
 				// System.out.println("Delete " + lsRfile.getAbsolutePath());
 				lsRfile.delete();
 			}
 
 			// Create a temporary ls-R file
-			File temp_lsRfile = new File(environment.getTeXMFRootDirectory() + "/ls-R");
+			File temp_lsRfile = new File(environment.getTeXMFRootDirectory(), "ls-R");
 			try {
 				Streams.writeStringToFile(lsR_magic, temp_lsRfile, false);
 				// Now do the "ls -R . >> ls-R" in the texmf root directory
@@ -63,6 +63,7 @@ public class MakeLSR extends Task {
 						lsR_stream), 600000);
 				lsR_stream.close();
 			} catch (Exception e) {
+				temp_lsRfile.delete();
 				setException(e);
 				return;
 			}

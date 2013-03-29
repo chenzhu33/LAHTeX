@@ -131,6 +131,15 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			logs.add(new LogLine(LogLine.LEVEL_OK, line));
 	}
 
+	protected void checkProgram(String program) throws Exception {
+		File program_file = new File(environment.getTeXMFBinaryDirectory() + "/" + program);
+		if (program_file.exists()) {
+			makeTEXMFCNF();
+		} else {
+			throw new TeXMFFileNotFoundException(program_file.getName(), null);
+		}
+	}
+
 	/**
 	 * Make native TeX binaries executable.
 	 * 
@@ -229,6 +238,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			line = single_line_matcher.group(1);
 
 			// Always append the log
+			System.out.println(line);
 			appendLog(line);
 			output_buffer.delete(0, single_line_matcher.end());
 
@@ -275,15 +285,6 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	public void reset() {
 		super.reset();
 		output_buffer.delete(0, output_buffer.length());
-	}
-
-	protected void checkProgram(String program) throws Exception {
-		File program_file = new File(environment.getTeXMFBinaryDirectory() + "/" + program);
-		if (program_file.exists()) {
-			makeTEXMFCNF();
-		} else {
-			throw new TeXMFFileNotFoundException(program_file.getName(), null);
-		}
 	}
 
 	@Override
