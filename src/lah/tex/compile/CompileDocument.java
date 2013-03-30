@@ -91,7 +91,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			Pattern.compile("! I can't find file `([^`']*)'.*").matcher(""),
 			Pattern.compile("! Package fontenc Error: Encoding file `([^`']*)' not found.").matcher(""),
 			Pattern.compile("Could not open config file \"(dvipdfmx\\.cfg)\"\\.").matcher(""),
-			Pattern.compile("! OOPS! I can't find any hyphenation patterns for US english.").matcher(""), };
+			Pattern.compile("I can't find the format file `([^`']*)'!").matcher(""),
+			// the following need to be the last pattern
+			Pattern.compile("! OOPS! I can't find any hyphenation patterns for US english.").matcher("") };
 
 	private File tex_src_file;
 

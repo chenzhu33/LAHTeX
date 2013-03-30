@@ -11,7 +11,7 @@ public class MakeFMT extends CompileDocument {
 	/**
 	 * Pattern for TeX, MetaFont or MetaPost memory dump file
 	 */
-	private static final Pattern format_pattern = Pattern.compile("([a-z]*)\\.(fmt|base|mem)");
+	public static final Pattern format_pattern = Pattern.compile("([a-z]*)\\.(fmt|base|mem)");
 
 	private static MakeLanguageConfigurations make_lang_config_task;
 
