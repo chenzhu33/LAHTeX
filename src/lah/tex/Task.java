@@ -36,9 +36,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	/**
 	 * The content of the text file "index", each line is of format
-	 * {@code [package_name]/[file_1]/[file_2]/.../[file_n]/} where
-	 * {@code [file_1], [file_2], ..., [file_n]} are all files contained in a
-	 * package with name {@code [package_name]}.
+	 * {@code [package_name]/[file_1]/[file_2]/.../[file_n]/} where {@code [file_1], [file_2], ..., [file_n]} are all
+	 * files contained in a package with name {@code [package_name]}.
 	 */
 	private static String package_file_index;
 
@@ -128,8 +127,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	}
 
 	/**
-	 * Reset the state of this task for next execution. Subclasses SHOULD invoke
-	 * reset() first when implementing run().
+	 * Reset the state of this task for next execution. Subclasses SHOULD invoke reset() first when implementing run().
 	 */
 	public void reset() {
 		this.exception = null;

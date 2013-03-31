@@ -30,8 +30,8 @@ public class TLPackage implements Comparable<TLPackage> {
 	/**
 	 * Compare this package object with another object.
 	 * 
-	 * Here, we allow for comparison with String so that installer can remove
-	 * installed packages directly from their names.
+	 * Here, we allow for comparison with String so that installer can remove installed packages directly from their
+	 * names.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -66,8 +66,8 @@ public class TLPackage implements Comparable<TLPackage> {
 	}
 
 	/**
-	 * Check if this package is of Collection category. Currently we obtain this
-	 * information directly from the name, not from the field category.
+	 * Check if this package is of Collection category. Currently we obtain this information directly from the name, not
+	 * from the field category.
 	 * 
 	 * @return
 	 */
@@ -80,8 +80,8 @@ public class TLPackage implements Comparable<TLPackage> {
 	}
 
 	/**
-	 * Check if this package is of Scheme category. Currently we obtain this
-	 * information directly from the name, not from the field category.
+	 * Check if this package is of Scheme category. Currently we obtain this information directly from the name, not
+	 * from the field category.
 	 * 
 	 * @return
 	 */

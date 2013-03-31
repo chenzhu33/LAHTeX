@@ -18,8 +18,8 @@ import lah.tex.exceptions.KpathseaException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
 
 /**
- * Class for an compilation task which encapsulates not only the specific
- * command to be executed but also the result and perform the log analysis.
+ * Class for an compilation task which encapsulates not only the specific command to be executed but also the result and
+ * perform the log analysis.
  * 
  * @author L.A.H.
  * 
@@ -145,8 +145,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	/**
 	 * Make native TeX binaries executable.
 	 * 
-	 * @return {@literal true} if the method complete successfully;
-	 *         {@literal false} otherwise
+	 * @return {@literal true} if the method complete successfully; {@literal false} otherwise
 	 * @throws Exception
 	 */
 	private boolean chmodAllEngines() throws Exception {
@@ -175,8 +174,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	}
 
 	/**
-	 * Get the {@link File} links to the output PDF, DVI, ... of the compilation
-	 * process
+	 * Get the {@link File} links to the output PDF, DVI, ... of the compilation process
 	 * 
 	 * @return
 	 */
@@ -202,8 +200,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	}
 
 	/**
-	 * Generate configuration file texmf.cnf in the TeX binary directory
-	 * reflecting the installation
+	 * Generate configuration file texmf.cnf in the TeX binary directory reflecting the installation
 	 * 
 	 * @throws Exception
 	 */

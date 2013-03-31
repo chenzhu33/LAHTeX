@@ -179,8 +179,8 @@ public class InstallPackage extends Task {
 	}
 
 	/**
-	 * Relocate the extracted files and directories into the standard TeX
-	 * directory structure (i.e. texmf and texmf-dist)
+	 * Relocate the extracted files and directories into the standard TeX directory structure (i.e. texmf and
+	 * texmf-dist)
 	 * 
 	 * @throws Exception
 	 */

@@ -4,8 +4,7 @@ import lah.tex.Task;
 import lah.tex.manage.InstallSystemFile;
 
 /**
- * This exception should be raised when the some core file (xz, busybox, cp,
- * tar, rm, ...) is missing.
+ * This exception should be raised when the some core file (xz, busybox, cp, tar, rm, ...) is missing.
  * 
  * @author L.A.H.
  * 

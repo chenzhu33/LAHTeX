@@ -92,8 +92,7 @@ public class TeXMF extends TaskManager<Task> {
 	 * @param task_type
 	 *            One of {@link TaskType} enumeration
 	 * @param args
-	 *            A list of Strings as additional argument, interpretation
-	 *            depending on the task type
+	 *            A list of Strings as additional argument, interpretation depending on the task type
 	 * @return A new {@link Task} created, added for scheduling
 	 */
 	public Task createTask(TaskType task_type, String[] args) {

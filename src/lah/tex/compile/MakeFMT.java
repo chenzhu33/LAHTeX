@@ -16,8 +16,8 @@ public class MakeFMT extends CompileDocument {
 	private static MakeLanguageConfigurations make_lang_config_task;
 
 	/**
-	 * The format file to make must be of form *.fmt for TeX format, *.base for
-	 * MetaFont format, *.mem for MetaPost format
+	 * The format file to make must be of form *.fmt for TeX format, *.base for MetaFont format, *.mem for MetaPost
+	 * format
 	 */
 	private String format;
 
