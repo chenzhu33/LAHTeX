@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lah.spectre.multitask.TaskState;
 import lah.tex.IEnvironment;
 import lah.tex.Task;
 
@@ -42,7 +43,7 @@ public class GetPackageListTask extends Task {
 				temp_package_list.add(pkg);
 			}
 			package_list = temp_package_list;
-			setState(State.STATE_COMPLETE);
+			setState(TaskState.COMPLETE);
 		} catch (Exception e) {
 			setException(e);
 		}

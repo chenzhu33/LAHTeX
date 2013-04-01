@@ -37,7 +37,8 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 	}
 
 	@Override
-	public Task getSolution() {
+	public Task getSolution() throws Exception {
+		// System.out.println("Get solution for {" + kpse_command + "}");
 		if (kpse_command.startsWith("mktexfmt"))
 			return new MakeFMT(kpse_command.substring("mktexfmt".length()).trim());
 		Task t = super.getSolution();
@@ -51,12 +52,6 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 			return new MakeMF(kpse_command.substring("mktexmf".length()).trim());
 		else
 			return null;
-	}
-
-	@Override
-	public boolean hasSolution() {
-		// This depends on whether getSolution return non-null or not!?
-		return true;
 	}
 
 }

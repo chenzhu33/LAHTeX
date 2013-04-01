@@ -3,6 +3,7 @@ package lah.tex.manage;
 import java.io.File;
 import java.io.IOException;
 
+import lah.spectre.multitask.TaskState;
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
 
@@ -18,7 +19,7 @@ public class MakeFontConfigurations extends Task {
 	@Override
 	public void run() {
 		reset();
-		setState(State.STATE_EXECUTING);
+		setState(TaskState.EXECUTING);
 		// Prepare the font configuration file (if necessary)
 		File configfile = new File(environment.getTeXMFRootDirectory() + "/texmf-var/fonts/conf/fonts.conf");
 		File configdir = new File(environment.getTeXMFRootDirectory() + "/texmf-var/fonts/conf/");
@@ -44,7 +45,7 @@ public class MakeFontConfigurations extends Task {
 		// TODO Remove this!
 		try {
 			shell.fork(FC_CACHE_CMD, null);
-			setState(State.STATE_COMPLETE);
+			setState(TaskState.COMPLETE);
 		} catch (Exception e) {
 			setException(e);
 			return;

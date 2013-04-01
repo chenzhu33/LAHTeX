@@ -18,10 +18,6 @@ public abstract class SolvableException extends Exception {
 	 * @return A {@link Task} executing which probably solves this exception (raised via some other task); return
 	 *         {@code null} if there is no feasible resolution.
 	 */
-	public abstract Task getSolution();
-
-	public abstract boolean hasSolution();
-
-	public abstract void identifySolution() throws Exception;
+	public abstract Task getSolution() throws Exception;
 
 }

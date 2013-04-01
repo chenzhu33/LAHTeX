@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lah.spectre.multitask.TaskState;
 import lah.tex.manage.MakeLanguageConfigurations;
 
 public class MakeFMT extends CompileDocument {
@@ -69,7 +70,7 @@ public class MakeFMT extends CompileDocument {
 	public void run() {
 		reset();
 		try {
-			setState(State.STATE_EXECUTING);
+			setState(TaskState.EXECUTING);
 
 			// Prepare the default language files if they do not exist
 			// Regenerate path database to make sure that necessary input

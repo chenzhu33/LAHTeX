@@ -1,8 +1,11 @@
 package lah.tex;
 
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import lah.spectre.interfaces.IResult;
+import lah.spectre.multitask.TaskState;
 import lah.spectre.process.TimedShell;
 import lah.tex.exceptions.SolvableException;
 import lah.tex.manage.MakeLSR;
@@ -14,21 +17,6 @@ import lah.tex.manage.MakeLSR;
  * 
  */
 public abstract class Task implements IResult, lah.spectre.multitask.Task {
-
-	public static enum State {
-		/**
-		 * Task is already completed
-		 */
-		STATE_COMPLETE,
-		/**
-		 * Task is executing i.e. run() is executed
-		 */
-		STATE_EXECUTING,
-		/**
-		 * Task is waiting for execution
-		 */
-		STATE_PENDING;
-	}
 
 	protected static IEnvironment environment;
 
@@ -74,12 +62,21 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return res.size() > 0 ? res.toArray(new String[res.size()]) : null;
 	}
 
+	private ConcurrentLinkedQueue<Task> dependent_tasks;
+
 	protected Exception exception;
 
-	protected State state;
+	private boolean is_successful;
+
+	protected TaskState state;
 
 	protected Task() {
-		state = State.STATE_PENDING;
+		state = TaskState.PENDING;
+		dependent_tasks = new ConcurrentLinkedQueue<Task>();
+	}
+
+	private synchronized void addDependency(Task task) {
+		dependent_tasks.add(task);
 	}
 
 	public abstract String getDescription();
@@ -91,11 +88,14 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	public String getStatusString() {
 		switch (state) {
-		case STATE_PENDING:
-			return "Pending";
-		case STATE_EXECUTING:
+		case PENDING:
+			if (dependent_tasks.isEmpty())
+				return "Pending";
+			else
+				return "Waiting for dependent task";
+		case EXECUTING:
 			return "Executing ...";
-		case STATE_COMPLETE:
+		case COMPLETE:
 			if (exception != null)
 				return "Error: " + exception.getMessage();
 			return "Complete successfully";
@@ -111,19 +111,26 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	@Override
 	public boolean isComplete() {
-		return state == State.STATE_COMPLETE;
+		return state == TaskState.COMPLETE;
 	}
 
 	@Override
-	public boolean isExecutable() {
-		// TODO implement accordingly
-		return true;
+	public synchronized boolean isExecutable() {
+		// Remove dependent tasks that have completed successfully
+		Iterator<Task> iter = dependent_tasks.iterator();
+		while (iter.hasNext()) {
+			Task dep = iter.next();
+			if (dep.isSuccessful())
+				iter.remove();
+		}
+		// If there is no more dependency ==> ready!
+		return dependent_tasks.isEmpty();
 	}
 
 	@Override
-	public boolean isSuccessful() {
-		// TODO Auto-generated method stub
-		return false;
+	public final boolean isSuccessful() {
+		// return isComplete() && !hasException(); // TODO implement properly in each subclass
+		return is_successful;
 	}
 
 	/**
@@ -131,7 +138,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 */
 	public void reset() {
 		this.exception = null;
-		setState(State.STATE_PENDING);
+		this.is_successful = false;
+		this.state = TaskState.PENDING;
 	}
 
 	/**
@@ -142,32 +150,45 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		if (make_lsr_task.hasException())
 			setException(make_lsr_task.getException());
 		else
-			setState(State.STATE_COMPLETE);
+			setState(TaskState.COMPLETE);
 	}
 
-	protected void setException(Exception exception) {
+	/**
+	 * Set the exception raised during execution i.e. run()
+	 * 
+	 * @param exception
+	 */
+	protected synchronized void setException(Exception exception) {
 		this.exception = exception;
-		this.state = State.STATE_COMPLETE;
-		exception.printStackTrace(System.out);
+		this.state = TaskState.COMPLETE;
+		this.is_successful = false;
 		if (exception instanceof SolvableException) {
 			try {
-				SolvableException e = (SolvableException) exception;
-				e.identifySolution();
-				if (e.hasSolution()) {
-					task_manager.add(e.getSolution());
-					// task_manager.add(this);
+				Task solution_task = ((SolvableException) exception).getSolution();
+				// solution is available ==> mark dependency FIRST to prohibit this from being executed right away
+				// and then submit the solution task
+				if (solution_task != null) {
+					addDependency(solution_task);
+					task_manager.add(this);
+					task_manager.add(solution_task);
 				}
 			} catch (Exception e) {
-				// TODO this potentially go into a loop so we need to bound the
-				// recursion explicitly; for example, check if the exception is
-				// already thrown earlier
+				// TODO this potentially go into a loop so we need to bound the recursion explicitly; for example, check
+				// if the exception is already thrown earlier
 				setException(e);
 			}
 		}
 	}
 
-	protected void setState(State state) {
+	protected synchronized void setState(TaskState state) {
 		this.state = state;
+		this.is_successful = (this.state == TaskState.COMPLETE && !hasException());
+		System.out.println(getDescription() + " : " + getStatusString());
+	}
+
+	@Override
+	public String toString() {
+		return "{" + getDescription() + "}";
 	}
 
 }

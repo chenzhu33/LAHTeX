@@ -10,7 +10,6 @@ import lah.spectre.multitask.TaskManager;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.StreamRedirector;
 import lah.tex.compile.CompileDocument;
-import lah.tex.exceptions.SolvableException;
 import lah.tex.manage.InstallPackage;
 import lah.tex.manage.MakeFontConfigurations;
 import lah.tex.manage.MakeLSR;
@@ -159,14 +158,14 @@ public class TeXMF extends TaskManager<Task> {
 	}
 
 	public void resolve(Task task) {
-		if (task != null && task.hasException() && task.exception instanceof SolvableException
-				&& ((SolvableException) task.exception).hasSolution()) {
-			add(((SolvableException) task.exception).getSolution());
-			task.reset();
-			// re-queue task for retry
-			// TODO set dependency: only start when the solution task completes
-			resetAndAdd(task);
-		}
+		// if (task != null && task.hasException() && task.exception instanceof SolvableException
+		// && ((SolvableException) task.exception).hasSolution()) {
+		// add(((SolvableException) task.exception).getSolution());
+		// task.reset();
+		// // re-queue task for retry
+		// // TODO set dependency: only start when the solution task completes
+		// resetAndAdd(task);
+		// }
 	}
 
 	/**

@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import lah.spectre.Collections;
 import lah.spectre.FileName;
+import lah.spectre.multitask.TaskState;
 import lah.spectre.stream.IBufferProcessor;
 import lah.tex.Task;
 import lah.tex.exceptions.KpathseaException;
@@ -179,10 +180,6 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	 * @return
 	 */
 	public File getOutputFile() {
-		// ICompilationCommand cmd;
-		// if ((cmd = getCompilationCommand()) != null)
-		// return new File(cmd.getDirectory() + "/"
-		// + cmd.getInputFileWithoutExt() + "." + getOutputFileType());
 		return null;
 	}
 
@@ -229,7 +226,6 @@ public class CompileDocument extends Task implements IBufferProcessor {
 
 	@Override
 	public void processBuffer(byte[] buffer, int count) throws Exception {
-		// reset if there is no result available
 		output_buffer.append(new String(buffer, 0, count));
 		single_line_matcher.reset(output_buffer);
 		String line;
@@ -237,7 +233,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			line = single_line_matcher.group(1);
 
 			// Always append the log
-			System.out.println(line);
+			// System.out.println(line);
 			appendLog(line);
 			output_buffer.delete(0, single_line_matcher.end());
 
@@ -289,7 +285,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	@Override
 	public void run() {
 		reset();
-		setState(State.STATE_EXECUTING);
+		setState(TaskState.EXECUTING);
 		if (tex_src_file.exists()) {
 			try {
 				chmodAllEngines();
@@ -297,15 +293,14 @@ public class CompileDocument extends Task implements IBufferProcessor {
 				// compile the input file using the engine
 				shell.fork(command, tex_src_file.getParentFile(), null, this,
 						timeout <= 0 ? default_compilation_timeout : timeout);
-				setState(State.STATE_COMPLETE);
+				setState(TaskState.COMPLETE);
 			} catch (Exception e) {
 				setException(e);
-			} finally {
-				setState(State.STATE_COMPLETE);
+				return;
 			}
 		} else {
 			setException(new FileNotFoundException(tex_src_file + " does not exist!"));
-			setState(State.STATE_COMPLETE);
+			return;
 		}
 	}
 

@@ -33,19 +33,11 @@ public class TeXMFFileNotFoundException extends SolvableException {
 	}
 
 	@Override
-	public Task getSolution() {
+	public Task getSolution() throws Exception {
 		if (MakeFMT.format_pattern.matcher(missing_file).matches())
 			return new MakeFMT(missing_file);
-		return (missing_packages == null) ? null : new InstallPackage(missing_packages);
-	}
 
-	@Override
-	public boolean hasSolution() {
-		return missing_packages != null || MakeFMT.format_pattern.matcher(missing_file).matches();
-	}
-
-	@Override
-	public void identifySolution() throws Exception {
+		// System.out.println("Get solution for missing {" + missing_file + "}");
 		if (missing_file.equals("language.dat") || missing_file.equals("language.def"))
 			// this case is necessary because we might require these files
 			// before the package index is available
@@ -62,6 +54,8 @@ public class TeXMFFileNotFoundException extends SolvableException {
 		else
 			// other input files
 			missing_packages = Task.findPackagesWithFile(missing_file);
+
+		return (missing_packages == null) ? null : new InstallPackage(missing_packages);
 	}
 
 }

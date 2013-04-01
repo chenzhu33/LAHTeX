@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lah.spectre.Collections;
+import lah.spectre.multitask.TaskState;
 import lah.spectre.stream.Streams;
 import lah.tex.IEnvironment;
 import lah.tex.Task;
@@ -171,7 +172,7 @@ public class InstallPackage extends Task {
 
 	@Override
 	public String getStatusString() {
-		if (state == State.STATE_EXECUTING)
+		if (state == TaskState.EXECUTING)
 			return pending_packages == null ? "Computing dependency" : (num_success_packages + "/"
 					+ pending_packages.length + " packages installed");
 		else
@@ -223,7 +224,7 @@ public class InstallPackage extends Task {
 	@Override
 	public void run() {
 		reset();
-		setState(State.STATE_EXECUTING);
+		setState(TaskState.EXECUTING);
 
 		// compute dependency if necessary
 		num_success_packages = 0;
@@ -276,6 +277,7 @@ public class InstallPackage extends Task {
 			runFinalMakeLSR(); // and also regenerate ls-R files
 		} catch (Exception e) {
 			setException(e);
+			return;
 		}
 	}
 

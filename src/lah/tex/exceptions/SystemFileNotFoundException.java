@@ -33,13 +33,4 @@ public class SystemFileNotFoundException extends SolvableException {
 		return new InstallSystemFile(getMissingSystemFile());
 	}
 
-	@Override
-	public boolean hasSolution() {
-		return true;
-	}
-
-	@Override
-	public void identifySolution() {
-	}
-
 }

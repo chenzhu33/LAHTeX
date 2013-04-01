@@ -3,6 +3,7 @@ package lah.tex.manage;
 import java.io.File;
 import java.io.FileOutputStream;
 
+import lah.spectre.multitask.TaskState;
 import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
@@ -36,7 +37,7 @@ public class MakeLSR extends Task {
 	@Override
 	public void run() {
 		reset();
-		setState(State.STATE_EXECUTING);
+		setState(TaskState.EXECUTING);
 		for (int i = 0; i < texmf_dirs_files.length; i++) {
 			// System.out.println("Make lsr in directory " + texmf_dirs[i]);
 			File texmf_dir = texmf_dirs_files[i];
@@ -71,6 +72,6 @@ public class MakeLSR extends Task {
 			// Move the temporary file to the intended location
 			temp_lsRfile.renameTo(lsRfile);
 		}
-		setState(State.STATE_COMPLETE);
+		setState(TaskState.COMPLETE);
 	}
 }
