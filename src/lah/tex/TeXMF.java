@@ -1,12 +1,14 @@
 package lah.tex;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lah.spectre.multitask.TaskManager;
+import lah.spectre.multitask.ScheduleTaskManager;
 import lah.spectre.process.TimedShell;
 import lah.spectre.stream.StreamRedirector;
 import lah.tex.compile.CompileDocument;
@@ -21,26 +23,7 @@ import lah.tex.manage.MakeLanguageConfigurations;
  * @author L.A.H.
  * 
  */
-public class TeXMF extends TaskManager<Task> {
-
-	public static enum TaskType {
-		/**
-		 * Compile a document
-		 */
-		TASK_COMPILE,
-		/**
-		 * Install a package
-		 */
-		TASK_INSTALL_PACKAGE,
-		/**
-		 * Generate fontconfig's configuration files and cache
-		 */
-		TASK_MAKE_FONTCONFIG,
-		/**
-		 * Generate language configurations (hyphenation patterns)
-		 */
-		TASK_MAKE_LANGUAGES_CONFIG
-	}
+public class TeXMF extends ScheduleTaskManager<Task> {
 
 	/**
 	 * My Dropbox shared folder containing the packages
@@ -65,7 +48,10 @@ public class TeXMF extends TaskManager<Task> {
 		return texmf_instance;
 	}
 
+	private List<TaskGroup> task_groups;
+
 	private TeXMF(IEnvironment environment) {
+		task_groups = new ArrayList<TaskGroup>();
 		Task.task_manager = this;
 		Task.environment = environment;
 		Task.shell = new TimedShell();
@@ -85,6 +71,13 @@ public class TeXMF extends TaskManager<Task> {
 		Task.shell.export("OSFONTDIR", environment.getOSFontsDirectory());
 	}
 
+	void add(Task task, boolean schedule, TaskGroup group) {
+		task.setGroup(group);
+		if (task != group.getMainTask() && !group.subordinated_tasks.contains(task))
+			group.subordinated_tasks.add(task);
+		add(task, schedule);
+	}
+
 	/**
 	 * Create a new task and submit for scheduled execution
 	 * 
@@ -97,23 +90,26 @@ public class TeXMF extends TaskManager<Task> {
 	public Task createTask(TaskType task_type, String[] args) {
 		Task result_task;
 		switch (task_type) {
-		case TASK_COMPILE:
+		case COMPILE:
 			result_task = new CompileDocument(args[0], args[1]);
 			break;
-		case TASK_INSTALL_PACKAGE:
+		case INSTALL_PACKAGE:
 			result_task = new InstallPackage(args);
 			break;
-		case TASK_MAKE_FONTCONFIG:
+		case MAKE_FONTCONFIG:
 			result_task = new MakeFontConfigurations();
 			break;
-		case TASK_MAKE_LANGUAGES_CONFIG:
+		case MAKE_LANGUAGES_CONFIG:
 			result_task = new MakeLanguageConfigurations(args);
 			break;
 		default:
 			result_task = null;
 		}
-		if (result_task != null)
-			add(result_task);
+		if (result_task != null) {
+			TaskGroup result_group = new TaskGroup(result_task);
+			task_groups.add(result_group);
+			add(result_task, true, result_group);
+		}
 		return result_task;
 	}
 
@@ -132,6 +128,10 @@ public class TeXMF extends TaskManager<Task> {
 		}
 		String key = (dropbox_keys_map == null ? null : dropbox_keys_map.get(package_name));
 		return (key == null ? null : DROPBOX_ARCHIVE + key + "/" + package_name + InstallPackage.PACKAGE_EXTENSION);
+	}
+
+	public List<TaskGroup> getTaskGroups() {
+		return task_groups;
 	}
 
 	/**
@@ -154,7 +154,7 @@ public class TeXMF extends TaskManager<Task> {
 
 	public void resetAndAdd(Task task) {
 		task.reset();
-		add(task);
+		add(task, true);
 	}
 
 	public void resolve(Task task) {

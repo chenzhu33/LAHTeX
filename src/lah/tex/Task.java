@@ -70,6 +70,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected TaskState state;
 
+	private TaskGroup task_group;
+
 	protected Task() {
 		state = TaskState.PENDING;
 		dependent_tasks = new ConcurrentLinkedQueue<Task>();
@@ -110,7 +112,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	}
 
 	@Override
-	public boolean isComplete() {
+	public boolean isDone() {
 		return state == TaskState.COMPLETE;
 	}
 
@@ -169,8 +171,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 				// and then submit the solution task
 				if (solution_task != null) {
 					addDependency(solution_task);
-					task_manager.add(this);
-					task_manager.add(solution_task);
+					task_manager.add(this, true);
+					task_manager.add(solution_task, true, task_group);
 				}
 			} catch (Exception e) {
 				// TODO this potentially go into a loop so we need to bound the recursion explicitly; for example, check
@@ -180,10 +182,14 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		}
 	}
 
+	void setGroup(TaskGroup group) {
+		this.task_group = group;
+	}
+
 	protected synchronized void setState(TaskState state) {
 		this.state = state;
 		this.is_successful = (this.state == TaskState.COMPLETE && !hasException());
-		System.out.println(getDescription() + " : " + getStatusString());
+		// System.out.println(getDescription() + " : " + getStatusString());
 	}
 
 	@Override
