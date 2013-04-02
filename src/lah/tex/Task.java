@@ -88,6 +88,10 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return exception;
 	}
 
+	TaskGroup getGroup() {
+		return task_group;
+	}
+
 	public String getStatusString() {
 		switch (state) {
 		case PENDING:
@@ -171,8 +175,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 				// and then submit the solution task
 				if (solution_task != null) {
 					addDependency(solution_task);
-					task_manager.add(this, true);
-					task_manager.add(solution_task, true, task_group);
+					task_manager.enqueue(this);
+					task_manager.add(solution_task, task_group);
 				}
 			} catch (Exception e) {
 				// TODO this potentially go into a loop so we need to bound the recursion explicitly; for example, check

@@ -70,12 +70,12 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		Task.shell.export("FONTCONFIG_PATH", fontconfig_path);
 		Task.shell.export("OSFONTDIR", environment.getOSFontsDirectory());
 	}
-
-	void add(Task task, boolean schedule, TaskGroup group) {
+	
+	void add(Task task, TaskGroup group) {
 		task.setGroup(group);
 		if (task != group.getMainTask() && !group.subordinated_tasks.contains(task))
 			group.subordinated_tasks.add(task);
-		add(task, schedule);
+		enqueue(task);
 	}
 
 	/**
@@ -108,7 +108,7 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		if (result_task != null) {
 			TaskGroup result_group = new TaskGroup(result_task);
 			task_groups.add(result_group);
-			add(result_task, true, result_group);
+			add(result_task, result_group);
 		}
 		return result_task;
 	}
@@ -152,20 +152,16 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		}
 	}
 
-	public void resetAndAdd(Task task) {
-		task.reset();
-		add(task, true);
-	}
-
-	public void resolve(Task task) {
-		// if (task != null && task.hasException() && task.exception instanceof SolvableException
-		// && ((SolvableException) task.exception).hasSolution()) {
-		// add(((SolvableException) task.exception).getSolution());
-		// task.reset();
-		// // re-queue task for retry
-		// // TODO set dependency: only start when the solution task completes
-		// resetAndAdd(task);
-		// }
+	public void remove(Task task) {
+		// super.remove(task);
+		cancel(task);
+		TaskGroup group = task.getGroup();
+		if (group.main_task == task) {
+			for (Task t : group.subordinated_tasks)
+				cancel(t);
+			task_groups.remove(group);
+		} else
+			group.subordinated_tasks.remove(task);
 	}
 
 	/**
