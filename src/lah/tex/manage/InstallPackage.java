@@ -240,6 +240,8 @@ public class InstallPackage extends Task {
 
 		boolean has_lualibs = false;
 		for (int i = 0; i < pending_packages.length; i++) {
+			if (Thread.interrupted())
+				break;
 			setPackageState(i, PackageState.PACKAGE_INSTALLING);
 			// TODO Fix this: return on failure to install requested package
 			// only continue if some dependent package is missing
@@ -264,6 +266,8 @@ public class InstallPackage extends Task {
 			} catch (SystemFileNotFoundException e) {
 				setException(e);
 				return;
+			} catch (InterruptedException e) {
+				break;
 			} catch (Exception e) {
 				setPackageState(i, PackageState.PACKAGE_FAIL);
 			}
