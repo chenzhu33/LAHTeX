@@ -113,7 +113,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		if (tex_engine.equals("bibtex") || tex_engine.equals("makeindex"))
 			this.command = new String[] { tex_engine, input_file_no_ext };
 		else if (tex_engine.equals("metapost")) {
-			this.command = new String[] { "mpost", tex_src_file.getName() };
+			this.command = new String[] { "mpost", "-tex=tex", "-interaction=nonstopmode", tex_src_file.getName() };
 		} else {
 			String tex_fmt = tex_engine.equals("pdftex") ? "pdfetex" : tex_engine;
 			this.command = new String[] { getProgramFromFormat(tex_engine), "-interaction=nonstopmode",
@@ -291,7 +291,11 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		if (tex_src_file.exists()) {
 			try {
 				chmodAllEngines();
+				// check the existence of the engine
 				checkProgram(command[0]);
+				// for METAPOST, tex might also be required for labels
+				if (command[0].equals("mpost"))
+					checkProgram("tex");
 				// compile the input file using the engine
 				shell.fork(command, tex_src_file.getParentFile(), null, this,
 						timeout <= 0 ? default_compilation_timeout : timeout);
