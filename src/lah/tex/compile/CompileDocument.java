@@ -112,7 +112,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		String input_file_no_ext = FileName.removeFileExtension(tex_src_file.getName());
 		if (tex_engine.equals("bibtex") || tex_engine.equals("makeindex"))
 			this.command = new String[] { tex_engine, input_file_no_ext };
-		else {
+		else if (tex_engine.equals("metapost")) {
+			this.command = new String[] { "mpost", tex_src_file.getName() };
+		} else {
 			String tex_fmt = tex_engine.equals("pdftex") ? "pdfetex" : tex_engine;
 			this.command = new String[] { getProgramFromFormat(tex_engine), "-interaction=nonstopmode",
 					"-fmt=" + tex_fmt, tex_src_file.getName() };

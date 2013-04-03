@@ -48,6 +48,8 @@ public class TeXMFFileNotFoundException extends SolvableException {
 			missing_packages = new String[] { "metafont" };
 		else if (missing_file.equals("gftopk"))
 			missing_packages = new String[] { "mfware" };
+		else if (missing_file.equals("mpost"))
+			missing_packages = new String[] { "metapost" };
 		else if (!missing_file.contains("."))
 			// engines like tex, pdftex, etc
 			missing_packages = new String[] { missing_file };
