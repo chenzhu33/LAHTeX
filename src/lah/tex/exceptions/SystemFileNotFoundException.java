@@ -20,6 +20,12 @@ public class SystemFileNotFoundException extends SolvableException {
 	}
 
 	@Override
+	public boolean equals(Object obj) {
+		return (obj instanceof SystemFileNotFoundException) ? missing_system_file
+				.equals(((SystemFileNotFoundException) obj).missing_system_file) : false;
+	}
+
+	@Override
 	public String getMessage() {
 		return "Missing system file " + missing_system_file;
 	}

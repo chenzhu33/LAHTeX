@@ -32,6 +32,12 @@ public class KpathseaException extends TeXMFFileNotFoundException {
 			missing_file = base_name;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		return ((obj instanceof KpathseaException) && kpse_command.equals(((KpathseaException) obj).kpse_command))
+				|| super.equals(obj);
+	}
+
 	public String getCommand() {
 		return kpse_command;
 	}

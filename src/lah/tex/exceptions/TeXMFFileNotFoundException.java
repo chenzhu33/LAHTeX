@@ -24,6 +24,12 @@ public class TeXMFFileNotFoundException extends SolvableException {
 	}
 
 	@Override
+	public boolean equals(Object obj) {
+		return (obj instanceof TeXMFFileNotFoundException) ? missing_file
+				.equals(((TeXMFFileNotFoundException) obj).missing_file) : false;
+	}
+
+	@Override
 	public String getMessage() {
 		return "Missing "
 				+ missing_file

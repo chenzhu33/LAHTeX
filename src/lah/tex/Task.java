@@ -2,6 +2,7 @@ package lah.tex;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import lah.spectre.interfaces.IResult;
@@ -23,12 +24,20 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected static MakeLSR make_lsr_task;
 
 	/**
+	 * Default maximum number of exceptions we are willing to fix
+	 */
+	private static final int MAX_NUM_SOLVABLE_EXCEPTIONS = 100;
+
+	/**
 	 * The content of the text file "index", each line is of format
 	 * {@code [package_name]/[file_1]/[file_2]/.../[file_n]/} where {@code [file_1], [file_2], ..., [file_n]} are all
 	 * files contained in a package with name {@code [package_name]}.
 	 */
 	private static String package_file_index;
 
+	/**
+	 * Single instance of {@link TimedShell} for command execution
+	 */
 	protected static TimedShell shell;
 
 	protected static TeXMF task_manager;
@@ -67,6 +76,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected Exception exception;
 
 	private boolean is_successful;
+
+	private List<SolvableException> solvable_exceptions = new LinkedList<SolvableException>();
 
 	protected TaskState state;
 
@@ -146,6 +157,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		this.exception = null;
 		this.is_successful = false;
 		this.state = TaskState.PENDING;
+		// if (solvable_exceptions.size() == MAX_NUM_SOLVABLE_EXCEPTIONS)
+		// solvable_exceptions.clear();
 	}
 
 	/**
@@ -169,6 +182,21 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		this.state = TaskState.COMPLETE;
 		this.is_successful = false;
 		if (exception instanceof SolvableException) {
+			// Exception is already encountered
+			if (solvable_exceptions.contains(exception)) {
+				this.exception = new Exception("<" + exception.getMessage()
+						+ "> is encountered again. Previous attempt to fix it probably failed.");
+				return;
+			}
+
+			// Already at maximum tolerance
+			solvable_exceptions.add((SolvableException) exception);
+			if (solvable_exceptions.size() > MAX_NUM_SOLVABLE_EXCEPTIONS) {
+				this.exception = new Exception("Too many exceptions!");
+				return;
+			}
+
+			// Fix it if possible
 			try {
 				Task solution_task = ((SolvableException) exception).getSolution();
 				// solution is available ==> mark dependency FIRST to prohibit this from being executed right away
@@ -179,8 +207,6 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 					task_manager.add(solution_task, task_group);
 				}
 			} catch (Exception e) {
-				// TODO this potentially go into a loop so we need to bound the recursion explicitly; for example, check
-				// if the exception is already thrown earlier
 				setException(e);
 			}
 		}
