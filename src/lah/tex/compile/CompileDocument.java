@@ -1,10 +1,7 @@
 package lah.tex.compile;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -27,29 +24,36 @@ import lah.tex.exceptions.TeXMFFileNotFoundException;
  */
 public class CompileDocument extends Task implements IBufferProcessor {
 
-	// Pattern for missing fonts, probably not necessary
-	// Pattern.compile("! Font \\\\[^=]*=([^\\s]*)\\s"),
-	// Pattern.compile("! Font [^\\n]*file\\:([^\\:\\n]*)\\:"),
-	// Pattern.compile("! Font \\\\[^/]*/([^/]*)/")
+	private static final Pattern badbox_pattern = Pattern.compile("(Over|Under)(full \\\\[hv]box .*)");
 
 	/**
-	 * Standard output patterns
-	 */
-	private static final Pattern badboxPattern = Pattern.compile("(Over|Under)(full \\\\[hv]box .*)"),
-			errorPattern = Pattern.compile("! (.*)"), lineNumberPattern = Pattern
-					.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"), warningPattern = Pattern
-					.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)");
-
-	/**
-	 * Default time out for compilation; set to 600000 milisec (i.e. 10 minutes)
+	 * Default time out for compilation; set to 600000 miliseconds (i.e. 10 minutes)
 	 */
 	protected static final int default_compilation_timeout = 600000;
 
-	// static private Pattern[] other_issue_patterns = {
-	// Pattern.compile("! (.*)"),
-	// Pattern.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*"),
-	// Pattern.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)"),
-	// Pattern.compile("(Over|Under)(full \\\\[hv]box .*)") };
+	private static final Pattern error_pattern = Pattern.compile("! (.*)");
+
+	private static final Pattern kpathsea_pattern = Pattern.compile("kpathsea: Running (.+)\\s*");
+
+	@SuppressWarnings("unused")
+	private static final Pattern lineNumberPattern = Pattern.compile("(l\\.|line |lines )\\s*(\\d+)[^\\d].*");
+
+	private static final Pattern[] missing_file_patterns = {
+			// special cases, design for ease of switch
+			Pattern.compile("! OOPS! I can't find any hyphenation patterns for US english."),
+			Pattern.compile("! LuaTeX error .*: module '([^']*)' not found"),
+			Pattern.compile("! Font \\\\[^=]*=file:([^\\s:]*):.*metric data not found or bad"),
+			// the following must be such that invocation of group(1) gives the missing file
+			Pattern.compile("! LaTeX Error: File `([^`']*)' not found"),
+			Pattern.compile("! I can't find file `([^`']*)'"),
+			Pattern.compile("I can't find the format file `([^`']*)'!"),
+			Pattern.compile("!pdfTeX error: .+ \\(file (.+)\\)"),
+			Pattern.compile("! Package fontenc Error: Encoding file `([^`']*)' not found"),
+			Pattern.compile("Could not open config file \"([^\"]*)\"") };
+
+	private static final Pattern single_line_pattern = Pattern.compile("(.+)\n");
+
+	private static final Pattern warning_pattern = Pattern.compile("(((! )?(La|pdf)TeX)|Package) .*Warning.*:(.*)");
 
 	public static String getProgramFromFormat(String format) {
 		if (format.startsWith("pdf"))
@@ -62,39 +66,17 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			return "tex";
 	}
 
-	private StringBuilder accumulated_error_message;
-
-	final Matcher badboxMatcher = badboxPattern.matcher(""), errorMatcher = errorPattern.matcher(""),
-			lineNumberMatcher = lineNumberPattern.matcher(""), warningMatcher = warningPattern.matcher("");
-
 	protected String[] command;
 
 	protected String default_file_extension = "tex";
 
-	private final Matcher kpathsea_matcher = Pattern.compile("kpathsea: Running (.+)\\s*").matcher("");
-
 	private List<LogLine> logs;
 
-	private StringBuilder output_buffer = new StringBuilder();
+	private StringBuilder nonewline_output_buffer = new StringBuilder(1024);
 
-	private boolean pdftex_error = false;
-
-	private final Matcher pdftex_error_end = Pattern.compile(" ==> Fatal error occurred, no output PDF file produced!")
-			.matcher(""), pdftex_error_start = Pattern.compile("!pdfTeX error: .+").matcher(""),
-			pdftex_missing_file_matcher = Pattern.compile("!pdfTeX error: .+ \\(file (.+)\\): .+").matcher("");
-
-	private final Matcher single_line_matcher = Pattern.compile("(.+)\n").matcher("");
+	private StringBuilder output_buffer = new StringBuilder(1024);
 
 	protected String tex_engine;
-
-	private final Matcher[] tex_missing_file_matchers = {
-			Pattern.compile("! LaTeX Error: File `([^`']*)' not found.*").matcher(""),
-			Pattern.compile("! I can't find file `([^`']*)'.*").matcher(""),
-			Pattern.compile("! Package fontenc Error: Encoding file `([^`']*)' not found.").matcher(""),
-			Pattern.compile("Could not open config file \"(dvipdfmx\\.cfg)\"\\.").matcher(""),
-			Pattern.compile("I can't find the format file `([^`']*)'!").matcher(""),
-			// the following need to be the last pattern
-			Pattern.compile("! OOPS! I can't find any hyphenation patterns for US english.").matcher("") };
 
 	private File tex_src_file;
 
@@ -126,23 +108,14 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			return;
 		if (logs == null)
 			logs = new ArrayList<LogLine>();
-		if (warningMatcher.reset(line).matches())
+		if (warning_pattern.matcher(line).matches())
 			logs.add(new LogLine(LogLine.LEVEL_WARNING, line));
-		else if (badboxMatcher.reset(line).matches())
+		else if (badbox_pattern.matcher(line).matches())
 			logs.add(new LogLine(LogLine.LEVEL_WARNING, line));
-		else if (errorMatcher.reset(line).matches())
+		else if (error_pattern.matcher(line).matches())
 			logs.add(new LogLine(LogLine.LEVEL_ERROR, line));
 		else
 			logs.add(new LogLine(LogLine.LEVEL_OK, line));
-	}
-
-	protected void checkProgram(String program) throws Exception {
-		File program_file = new File(environment.getTeXMFBinaryDirectory() + "/" + program);
-		if (program_file.exists()) {
-			makeTEXMFCNF();
-		} else {
-			throw new TeXMFFileNotFoundException(program_file.getName(), null);
-		}
 	}
 
 	/**
@@ -198,81 +171,44 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		return null;
 	}
 
-	/**
-	 * Generate configuration file texmf.cnf in the TeX binary directory reflecting the installation
-	 * 
-	 * @throws Exception
-	 */
-	public void makeTEXMFCNF() throws Exception {
-		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory() + "/texmf.cnf");
-		if (!texmfcnf_file.exists()) {
-			File texmfcnf_src = new File(environment.getTeXMFRootDirectory() + "/texmf/web2c/texmf.cnf");
-			if (!texmfcnf_src.exists()) {
-				throw new TeXMFFileNotFoundException("texmf.cnf", null);
-			}
-			BufferedReader reader = new BufferedReader(new FileReader(texmfcnf_src));
-			FileWriter writer = new FileWriter(texmfcnf_file);
-			String line;
-			while ((line = reader.readLine()) != null) {
-				if (line.startsWith("TEXMFROOT"))
-					writer.write("TEXMFROOT = " + environment.getTeXMFRootDirectory() + "\n");
-				else if (line.startsWith("TEXMFVAR") && environment.isPortable())
-					writer.write("TEXMFVAR = $TEXMFSYSVAR\n");
-				else
-					writer.write(line + "\n");
-			}
-			reader.close();
-			writer.close();
-		}
+	@Override
+	public boolean isSuccessful() {
+		// TODO return false in case if there is TeX error as well
+		// Errors are lines with a bank i.e. character !
+		return super.isSuccessful();
 	}
 
+	/**
+	 * Process *TeX, MetaFont and MetaPost standard output
+	 */
 	@Override
 	public void processBuffer(byte[] buffer, int count) throws Exception {
+		// Collect the log
 		output_buffer.append(new String(buffer, 0, count));
-		single_line_matcher.reset(output_buffer);
-		String line;
-		while (single_line_matcher.find()) {
-			line = single_line_matcher.group(1);
+		Matcher matcher = single_line_pattern.matcher(output_buffer);
+		Matcher kpsematcher;
+		while (matcher.find()) {
+			String line = matcher.group(1);
+			if ((kpsematcher = kpathsea_pattern.matcher(line)).find())
+				throw new KpathseaException(kpsematcher.group(1));
+			System.out.println(line);
+			appendLog(line); // Always append the log
+			output_buffer.delete(0, matcher.end());
+			nonewline_output_buffer.append(line);
+		}
 
-			// Always append the log
-			// System.out.println(line);
-			appendLog(line);
-			output_buffer.delete(0, single_line_matcher.end());
-
-			// Get pdfTeX error: go to accumulation state
-			if (pdftex_error_start.reset(line).matches()) {
-				pdftex_error = true;
-				accumulated_error_message = new StringBuilder(line);
-			}
-			if (pdftex_error) {
-				// End of pdfTeX error: identify the missing file
-				if (pdftex_error_end.reset(line).matches()) {
-					pdftex_error = false;
-					// now we parse the error for missing file
-					if (pdftex_missing_file_matcher.reset(accumulated_error_message).matches()) {
-						throw new TeXMFFileNotFoundException(pdftex_missing_file_matcher.group(1),
-								default_file_extension);
-					}
-				} else {
-					// continue accumulating the error
-					accumulated_error_message.append(line);
-					continue;
-				}
-			}
-
-			// Get Kpathsea error if any
-			if (kpathsea_matcher.reset(line).matches()) {
-				throw new KpathseaException(kpathsea_matcher.group(1));
-			}
-
-			// Looking for missing TeX|MF files
-			for (int i = 0; i < tex_missing_file_matchers.length; i++) {
-				if (tex_missing_file_matchers[i].reset(line).find()) {
-					if (i == tex_missing_file_matchers.length - 1)
-						throw new TeXMFFileNotFoundException("hyphen.tex", default_file_extension);
-					else
-						throw new TeXMFFileNotFoundException(tex_missing_file_matchers[i].group(1),
-								default_file_extension);
+		// Check for missing file error
+		for (int i = 0; i < missing_file_patterns.length; i++) {
+			if ((matcher = missing_file_patterns[i].matcher(nonewline_output_buffer)).find()) {
+				switch (i) {
+				case 0:
+					throw new TeXMFFileNotFoundException("hyphen.tex");
+				case 1:
+					throw new TeXMFFileNotFoundException(matcher.group(1) + ".lua");
+				case 2:
+					throw new TeXMFFileNotFoundException(matcher.group(1) + ".tfm");
+				default:
+					throw new TeXMFFileNotFoundException(matcher.group(1), default_file_extension);
 				}
 			}
 		}
@@ -282,6 +218,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	public void reset() {
 		super.reset();
 		output_buffer.delete(0, output_buffer.length());
+		nonewline_output_buffer.delete(0, nonewline_output_buffer.length());
 	}
 
 	@Override

@@ -1,5 +1,9 @@
 package lah.tex;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +13,7 @@ import lah.spectre.interfaces.IResult;
 import lah.spectre.multitask.TaskState;
 import lah.spectre.process.TimedShell;
 import lah.tex.exceptions.SolvableException;
+import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.manage.MakeLSR;
 
 /**
@@ -43,6 +48,21 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected static TeXMF task_manager;
 
 	/**
+	 * Check if a program exist
+	 * 
+	 * @param program
+	 * @throws Exception
+	 */
+	protected static void checkProgram(String program) throws Exception {
+		File program_file = new File(environment.getTeXMFBinaryDirectory(), program);
+		if (program_file.exists()) {
+			makeTEXMFCNF();
+		} else {
+			throw new TeXMFFileNotFoundException(program_file.getName(), null);
+		}
+	}
+
+	/**
 	 * Find all packages containing a file
 	 * 
 	 * @param file_query
@@ -69,6 +89,34 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 			res.add(package_file_index.substring(j, i));
 		}
 		return res.size() > 0 ? res.toArray(new String[res.size()]) : null;
+	}
+
+	/**
+	 * Generate configuration file texmf.cnf in the TeX binary directory reflecting the installation
+	 * 
+	 * @throws Exception
+	 */
+	private static void makeTEXMFCNF() throws Exception {
+		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory() + "/texmf.cnf");
+		if (!texmfcnf_file.exists()) {
+			File texmfcnf_src = new File(environment.getTeXMFRootDirectory() + "/texmf/web2c/texmf.cnf");
+			if (!texmfcnf_src.exists()) {
+				throw new TeXMFFileNotFoundException("texmf.cnf", null);
+			}
+			BufferedReader reader = new BufferedReader(new FileReader(texmfcnf_src));
+			FileWriter writer = new FileWriter(texmfcnf_file);
+			String line;
+			while ((line = reader.readLine()) != null) {
+				if (line.startsWith("TEXMFROOT"))
+					writer.write("TEXMFROOT = " + environment.getTeXMFRootDirectory() + "\n");
+				else if (line.startsWith("TEXMFVAR") && environment.isPortable())
+					writer.write("TEXMFVAR = $TEXMFSYSVAR\n");
+				else
+					writer.write(line + "\n");
+			}
+			reader.close();
+			writer.close();
+		}
 	}
 
 	private ConcurrentLinkedQueue<Task> dependent_tasks;
@@ -145,7 +193,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	}
 
 	@Override
-	public final boolean isSuccessful() {
+	public boolean isSuccessful() {
 		// return isComplete() && !hasException(); // TODO implement properly in each subclass
 		return is_successful;
 	}

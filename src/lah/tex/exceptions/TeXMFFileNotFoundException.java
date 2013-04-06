@@ -16,6 +16,10 @@ public class TeXMFFileNotFoundException extends SolvableException {
 	protected TeXMFFileNotFoundException() {
 	}
 
+	public TeXMFFileNotFoundException(String missing_file) {
+		this.missing_file = missing_file;
+	}
+	
 	public TeXMFFileNotFoundException(String missing_file, String default_file_extension) {
 		if (missing_file.indexOf('.') < 0 && default_file_extension != null)
 			this.missing_file = missing_file + "." + default_file_extension;
