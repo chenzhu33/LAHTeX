@@ -2,6 +2,7 @@ package lah.tex.compile;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +31,8 @@ public class MakeMF extends Task {
 
 	@Override
 	public String getDescription() {
-		return "Generate METAFONT font " + name + ".mf";
+		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
+		return strings.getString("generate_metafont_font_") + name + ".mf";
 	}
 
 	private String getRealSize(int pointsize) {

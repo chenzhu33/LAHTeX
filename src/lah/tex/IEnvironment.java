@@ -1,6 +1,7 @@
 package lah.tex;
 
 import java.io.File;
+import java.util.Locale;
 
 public interface IEnvironment {
 
@@ -20,6 +21,8 @@ public interface IEnvironment {
 	String getTeXMFBinaryDirectory();
 
 	String getTeXMFRootDirectory();
+	
+	Locale getLocale();
 
 	boolean isPortable();
 

@@ -1,6 +1,7 @@
 package lah.tex.compile;
 
 import java.io.File;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,7 +64,8 @@ public class MakeFMT extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		return "Make format " + format;
+		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
+		return strings.getString("make_format_") + format;
 	}
 
 	@Override
