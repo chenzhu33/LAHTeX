@@ -194,6 +194,10 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		return dependent_tasks.isEmpty();
 	}
 
+	public boolean isMainTask() {
+		return getGroup().getMainTask() == this;
+	}
+
 	@Override
 	public boolean isSuccessful() {
 		// return isComplete() && !hasException(); // TODO implement properly in each subclass
