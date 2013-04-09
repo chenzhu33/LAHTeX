@@ -140,7 +140,7 @@ public class InstallPackage extends Task {
 
 	@Override
 	public String getDescription() {
-		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings",environment.getLocale());
+		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		return strings.getString("install_") + Collections.stringOfArray(packages, " ", null, null);
 	}
 
@@ -177,13 +177,11 @@ public class InstallPackage extends Task {
 	public String getStatusString() {
 		if (state == TaskState.EXECUTING) {
 			ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
-			if (pending_packages == null) 
+			if (pending_packages == null)
 				return strings.getString("computing_dependency");
-			else {
-				String[] inputInteger = new String[]{Integer.toString(num_success_packages), Integer.toString(pending_packages.length)};
-				return MessageFormat.format(strings.getString("packages_installed"), inputInteger);
-			}
-					
+			else
+				return MessageFormat.format(strings.getString("packages_installed"), num_success_packages,
+						pending_packages.length);
 		} else
 			return super.getStatusString();
 	}

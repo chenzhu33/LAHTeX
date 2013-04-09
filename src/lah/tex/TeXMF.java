@@ -51,7 +51,8 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 	private List<TaskGroup> task_groups;
 
 	private TeXMF(IEnvironment environment) {
-		task_groups = new ArrayList<TaskGroup>();
+		this.task_groups = new ArrayList<TaskGroup>();
+		
 		Task.task_manager = this;
 		Task.environment = environment;
 		Task.shell = new TimedShell();
@@ -153,12 +154,11 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 	}
 
 	public void remove(Task task) {
-		// super.remove(task);
 		cancel(task);
 		TaskGroup group = task.getGroup();
 		if (group.main_task == task) {
-			for (Task t : group.subordinated_tasks)
-				cancel(t);
+			for (Task subtask : group.subordinated_tasks)
+				cancel(subtask);
 			task_groups.remove(group);
 		} else
 			group.subordinated_tasks.remove(task);

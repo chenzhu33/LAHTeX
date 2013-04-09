@@ -155,7 +155,9 @@ public class CompileDocument extends Task implements IBufferProcessor {
 	 * @return
 	 */
 	public File getOutputFile() {
-		return null;
+		// TODO implement properly in subclasses
+		return tex_src_file == null ? null : new File(tex_src_file.getParentFile(), FileName.replaceFileExt(
+				tex_src_file.getName(), getOutputType()));
 	}
 
 	public String getOutputType() {
@@ -191,7 +193,7 @@ public class CompileDocument extends Task implements IBufferProcessor {
 			String line = matcher.group(1);
 			if ((kpsematcher = kpathsea_pattern.matcher(line)).find())
 				throw new KpathseaException(kpsematcher.group(1));
-			System.out.println(line);
+			// System.out.println(line);
 			appendLog(line); // Always append the log
 			output_buffer.delete(0, matcher.end());
 			nonewline_output_buffer.append(line);
