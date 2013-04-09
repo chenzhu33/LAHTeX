@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import lah.spectre.interfaces.IResult;
@@ -152,18 +153,19 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	}
 
 	public String getStatusString() {
+		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		switch (state) {
 		case PENDING:
 			if (dependent_tasks.isEmpty())
-				return "Pending";
+				return strings.getString("pending");
 			else
-				return "Waiting for dependent task";
+				return strings.getString("waiting_for_dependent_task");
 		case EXECUTING:
-			return "Executing ...";
+			return strings.getString("executing");
 		case COMPLETE:
 			if (exception != null)
-				return "Error: " + exception.getMessage();
-			return "Complete successfully";
+				return strings.getString("error_") + exception.getMessage();
+			return strings.getString("complete_successfully");
 		default:
 			return null;
 		}

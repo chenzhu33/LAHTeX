@@ -3,10 +3,12 @@ package lah.tex.manage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -138,7 +140,8 @@ public class InstallPackage extends Task {
 
 	@Override
 	public String getDescription() {
-		return "Install " + Collections.stringOfArray(packages, " ", null, null);
+		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings",environment.getLocale());
+		return strings.getString("install_") + Collections.stringOfArray(packages, " ", null, null);
 	}
 
 	public Set<String> getInstalledPackages() {
@@ -172,10 +175,16 @@ public class InstallPackage extends Task {
 
 	@Override
 	public String getStatusString() {
-		if (state == TaskState.EXECUTING)
-			return pending_packages == null ? "Computing dependency" : (num_success_packages + "/"
-					+ pending_packages.length + " packages installed");
-		else
+		if (state == TaskState.EXECUTING) {
+			ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
+			if (pending_packages == null) 
+				return strings.getString("computing_dependency");
+			else {
+				String[] inputInteger = new String[]{Integer.toString(num_success_packages), Integer.toString(pending_packages.length)};
+				return MessageFormat.format(strings.getString("packages_installed"), inputInteger);
+			}
+					
+		} else
 			return super.getStatusString();
 	}
 
