@@ -1,6 +1,5 @@
 package lah.tex;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,26 +51,13 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 
 	private TeXMF(IEnvironment environment) {
 		this.task_groups = new ArrayList<TaskGroup>();
-		
 		Task.task_manager = this;
 		Task.environment = environment;
 		Task.shell = new TimedShell();
 		Task.make_lsr_task = new MakeLSR();
-
-		// Set up environment variables such as PATH, TMPDIR, FONTCONFIG
-		// (for XeTeX to work) and OSFONTDIR (for LuaTeX font search)
-		// TODO set TEXMFCNF to the search locations of texmf.cnf as well
-		String path = environment.getTeXMFBinaryDirectory() + ":" + System.getenv("PATH");
-		String tmpdir = environment.getTeXMFRootDirectory() + "/texmf-var/tmp";
-		new File(tmpdir + "/").mkdirs();
-		String fontconfig_path = environment.getTeXMFRootDirectory() + "/texmf-var/fonts/conf";
-		new File(fontconfig_path + "/").mkdirs();
-		Task.shell.export("PATH", path);
-		Task.shell.export("TMPDIR", tmpdir);
-		Task.shell.export("FONTCONFIG_PATH", fontconfig_path);
-		Task.shell.export("OSFONTDIR", environment.getOSFontsDirectory());
+		notifyEnvironmentChanged();
 	}
-	
+
 	void add(Task task, TaskGroup group) {
 		task.setGroup(group);
 		if (task != group.getMainTask() && !group.subordinated_tasks.contains(task))
@@ -153,6 +139,10 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		}
 	}
 
+	public void notifyEnvironmentChanged() {
+		Task.setupEnvironment();
+	}
+
 	public void remove(Task task) {
 		cancel(task);
 		TaskGroup group = task.getGroup();
@@ -180,5 +170,4 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 			return false;
 		}
 	}
-
 }

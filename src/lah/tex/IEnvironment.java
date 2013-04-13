@@ -14,6 +14,8 @@ public interface IEnvironment {
 
 	String getBusyBox() throws Exception;
 
+	Locale getLocale();
+
 	String getOSFontsDirectory();
 
 	File getPackage(String package_name) throws Exception;
@@ -21,8 +23,6 @@ public interface IEnvironment {
 	String getTeXMFBinaryDirectory();
 
 	String getTeXMFRootDirectory();
-	
-	Locale getLocale();
 
 	boolean isPortable();
 

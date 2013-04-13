@@ -1,9 +1,6 @@
 package lah.tex;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,6 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import lah.spectre.interfaces.IResult;
 import lah.spectre.multitask.TaskState;
 import lah.spectre.process.TimedShell;
+import lah.spectre.stream.Streams;
 import lah.tex.exceptions.SolvableException;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
 import lah.tex.manage.MakeLSR;
@@ -48,6 +46,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected static TeXMF task_manager;
 
+	private static File texmfcnf_file, texmfcnf_src;
+
 	/**
 	 * Check if a program exist
 	 * 
@@ -57,7 +57,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected static void checkProgram(String program) throws Exception {
 		File program_file = new File(environment.getTeXMFBinaryDirectory(), program);
 		if (program_file.exists()) {
-			makeTEXMFCNF();
+			prepareKpathseaConfigurationIfNecessary();
 		} else {
 			throw new TeXMFFileNotFoundException(program_file.getName(), null);
 		}
@@ -97,27 +97,35 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 * 
 	 * @throws Exception
 	 */
-	private static void makeTEXMFCNF() throws Exception {
-		File texmfcnf_file = new File(environment.getTeXMFBinaryDirectory() + "/texmf.cnf");
-		if (!texmfcnf_file.exists()) {
-			File texmfcnf_src = new File(environment.getTeXMFRootDirectory() + "/texmf/web2c/texmf.cnf");
-			if (!texmfcnf_src.exists()) {
-				throw new TeXMFFileNotFoundException("texmf.cnf", null);
-			}
-			BufferedReader reader = new BufferedReader(new FileReader(texmfcnf_src));
-			FileWriter writer = new FileWriter(texmfcnf_file);
-			String line;
-			while ((line = reader.readLine()) != null) {
-				if (line.startsWith("TEXMFROOT"))
-					writer.write("TEXMFROOT = " + environment.getTeXMFRootDirectory() + "\n");
-				else if (line.startsWith("TEXMFVAR") && environment.isPortable())
-					writer.write("TEXMFVAR = $TEXMFSYSVAR\n");
-				else
-					writer.write(line + "\n");
-			}
-			reader.close();
-			writer.close();
-		}
+	private static void prepareKpathseaConfigurationIfNecessary() throws Exception {
+		if (!texmfcnf_src.exists())
+			throw new TeXMFFileNotFoundException("texmf.cnf", null);
+		if (!texmfcnf_file.exists())
+			Streams.writeStringToFile(
+					"# This is TeXPortal generated version of texmf.cnf\n# Do not edit directly unless you know the consequences\n"
+							+ "TEXMFROOT = " + environment.getTeXMFRootDirectory() + "\n"
+							+ (environment.isPortable() ? "TEXMFVAR = $TEXMFSYSVAR\n" : ""), texmfcnf_file, false);
+	}
+
+	/**
+	 * Set up environment variables such as PATH, TMPDIR and FONTCONFIG (for XeTeX to work), OSFONTDIR (for LuaTeX
+	 * system font search) and TEXMFCNF (kpathsea path configuration search dirs)
+	 */
+	static void setupEnvironment() {
+		String texmf_root = environment.getTeXMFRootDirectory();
+		String texmf_bin = environment.getTeXMFBinaryDirectory();
+		String path = texmf_bin + ":" + System.getenv("PATH");
+		String tmpdir = texmf_root + "/texmf-var/tmp";
+		new File(tmpdir + "/").mkdirs();
+		String fontconfig_path = texmf_root + "/texmf-var/fonts/conf";
+		new File(fontconfig_path + "/").mkdirs();
+		shell.export("PATH", path);
+		shell.export("TMPDIR", tmpdir);
+		shell.export("FONTCONFIG_PATH", fontconfig_path);
+		shell.export("OSFONTDIR", Task.environment.getOSFontsDirectory());
+		shell.export("TEXMFCNF", texmf_root + "/texmf-var" + ":" + texmf_root + "/texmf/web2c");
+		texmfcnf_file = new File(texmf_root + "/texmf-var/texmf.cnf");
+		texmfcnf_src = new File(texmf_root + "/texmf/web2c/texmf.cnf");
 	}
 
 	private ConcurrentLinkedQueue<Task> dependent_tasks;
@@ -253,8 +261,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 			// Fix it if possible
 			try {
 				Task solution_task = ((SolvableException) exception).getSolution();
-				// solution is available ==> mark dependency FIRST to prohibit this from being executed right away
-				// and then submit the solution task
+				// Solution is available ==> mark dependency FIRST to prohibit this from being executed right away
+				// Then submit the solution task; this task should wait for the solution task to finish and then execute
 				if (solution_task != null) {
 					addDependency(solution_task);
 					task_manager.enqueue(this);
