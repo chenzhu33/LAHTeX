@@ -25,6 +25,17 @@ import lah.tex.manage.MakeLanguageConfigurations;
 public class TeXMF extends ScheduleTaskManager<Task> {
 
 	/**
+	 * TeX languages that contain hyphenation
+	 */
+	public static final String[] ALL_HYPHEN_LANGUAGES = { "afrikaans", "ancientgreek", "arabic", "armenian", "basque",
+			"bulgarian", "catalan", "chinese", "coptic", "croatian", "czech", "danish", "dutch", "english",
+			"esperanto", "estonian", "ethiopic", "farsi", "finnish", "french", "friulan", "galician", "german",
+			"greek", "hungarian", "icelandic", "indic", "indonesian", "interlingua", "irish", "italian", "kurmanji",
+			"latin", "latvian", "lithuanian", "mongolian", "norwegian", "piedmontese", "polish", "portuguese",
+			"romanian", "romansh", "russian", "sanskrit", "serbian", "slovak", "slovenian", "spanish", "swedish",
+			"turkish", "turkmen", "ukrainian", "uppersorbian", "welsh" };
+
+	/**
 	 * My Dropbox shared folder containing the packages
 	 */
 	private static final String DROPBOX_ARCHIVE = "http://dl.dropbox.com/sh/wgsn35mknpaa29k/";

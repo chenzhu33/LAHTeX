@@ -22,6 +22,12 @@ import lah.tex.IEnvironment;
 import lah.tex.Task;
 import lah.tex.exceptions.SystemFileNotFoundException;
 
+/**
+ * Task to install a TeX Live package
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class InstallPackage extends Task {
 
 	public static enum PackageState {

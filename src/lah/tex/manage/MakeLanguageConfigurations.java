@@ -1,7 +1,6 @@
 package lah.tex.manage;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -11,13 +10,24 @@ import lah.spectre.stream.Streams;
 import lah.tex.Task;
 import lah.tex.exceptions.TeXMFFileNotFoundException;
 
+/**
+ * Task to generate language configurations (hyphenation patterns)
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class MakeLanguageConfigurations extends Task {
 
-	private static final Pattern lang_pattern = Pattern.compile("% from hyphen-(.*):\n[^%]*");
+	private static final String[] config_prefixes = {
+			"english		hyphen.tex  % do not change!\n=usenglish\n=USenglish\n=american\ndumylang	dumyhyph.tex    %for testing a new language.\nnohyphenation	zerohyph.tex    %a language with no patterns at all.\n",
+			"%% e-TeX V2.0;2\n\\addlanguage {USenglish}{hyphen}{}{2}{3} %%% This MUST be the first non-comment line of the file\n" };
 
-	private static final String[] language_files = { "language.dat", "language.def" };
+	private static final String[] config_suffixes = { "",
+			"\\uselanguage {USenglish}             %%% This MUST be the last line of the file.\n" };
 
-	private Map<String, String> language_dat_map, language_def_map;
+	private static final String[] lang_config_files = { "language.dat", "language.def" };
+
+	private static final Pattern lang_config_pattern = Pattern.compile("% from hyphen-(.*):\n[^%]*");
 
 	private String[] languages;
 
@@ -25,82 +35,48 @@ public class MakeLanguageConfigurations extends Task {
 		this.languages = languages;
 	}
 
-	public String[] getAllLanguages() throws Exception {
-		for (String lf : language_files) {
-			File langfile = new File(environment.getTeXMFRootDirectory() + "/texmf/tex/generic/config/" + lf);
-			if (!langfile.exists())
-				throw new TeXMFFileNotFoundException(lf, null);
-			String content = Streams.readTextFile(langfile);
-			Matcher langconfig_matcher = lang_pattern.matcher(content);
-			Map<String, String> lfmap;
-			if (lf.equals(language_files[0]))
-				lfmap = language_dat_map = new TreeMap<String, String>();
-			else
-				lfmap = language_def_map = new TreeMap<String, String>();
-			while (langconfig_matcher.find())
-				lfmap.put(langconfig_matcher.group(1), langconfig_matcher.group());
-		}
-		return language_dat_map.keySet().toArray(new String[language_dat_map.size()]);
-	}
-
 	@Override
 	public String getDescription() {
 		return "Generate language configurations";
 	}
 
-	public void makeLanguageConfiguration(String[] languages) throws Exception {
-
-	}
-
 	@Override
 	public void run() {
 		reset();
-		final String texmf_language_config = environment.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
-		new File(texmf_language_config).mkdirs();
-		// Write language.dat
-		String language_dat = "english		hyphen.tex  % do not change!\n" + "=usenglish\n" + "=USenglish\n"
-				+ "=american\n" + "dumylang	dumyhyph.tex    %for testing a new language.\n"
-				+ "nohyphenation	zerohyph.tex    %a language with no patterns at all.\n";
-		if (languages != null) {
-			if (language_dat_map == null)
-				try {
-					getAllLanguages();
-				} catch (Exception e) {
-					setException(e);
-					return;
+		String lang_config_loc = environment.getTeXMFRootDirectory() + "/texmf-var/tex/generic/config";
+		new File(lang_config_loc + "/").mkdirs();
+		for (int l = 0; l < lang_config_files.length; l++) {
+			String lf = lang_config_files[l];
+			File orig_config_file = new File(environment.getTeXMFRootDirectory() + "/texmf/tex/generic/config", lf);
+			if (!orig_config_file.exists()) {
+				setException(new TeXMFFileNotFoundException(lf, null));
+				return;
+			}
+			File config_file = new File(lang_config_loc, lf);
+			try {
+				Map<String, String> lcfgmap = new TreeMap<String, String>();
+				String lfcontent = Streams.readTextFile(orig_config_file);
+				Matcher matcher = lang_config_pattern.matcher(lfcontent);
+				while (matcher.find())
+					lcfgmap.put(matcher.group(1), matcher.group());
+				StringBuilder config = new StringBuilder(config_prefixes[l]);
+				if (languages != null) {
+					for (int i = 0; i < languages.length; i++) {
+						if (languages[i] != null && lcfgmap.containsKey(languages[i]))
+							config.append(lcfgmap.get(languages[i]));
+					}
 				}
-			for (int i = 0; i < languages.length; i++)
-				language_dat = language_dat + language_dat_map.get(languages[i]);
+				config.append(config_suffixes[l]);
+				Streams.writeStringToFile(config.toString(), config_file, false);
+			} catch (Exception e) {
+				// for safety, delete the file if exception occurs
+				config_file.delete();
+				setException(e);
+				return;
+			}
 		}
-		try {
-			Streams.writeStringToFile(language_dat, new File(texmf_language_config + "/language.dat"), false);
-		} catch (IOException e) {
-			setException(e);
-			return;
-		}
-		// Write language.def
-		String language_def = "%% e-TeX V2.0;2\n"
-				+ "\\addlanguage {USenglish}{hyphen}{}{2}{3} %%% This MUST be the first non-comment line of the file\n";
-		if (languages != null) {
-			if (language_def_map == null)
-				try {
-					getAllLanguages();
-				} catch (Exception e) {
-					setException(e);
-					return;
-				}
-			for (int i = 0; i < languages.length; i++)
-				language_def = language_def + language_def_map.get(languages[i]);
-		}
-		language_def = language_def
-				+ "\\uselanguage {USenglish}             %%% This MUST be the last line of the file.\n";
-		try {
-			Streams.writeStringToFile(language_def, new File(texmf_language_config + "/language.def"), false);
-		} catch (IOException e) {
-			setException(e);
-			return;
-		}
-		// Regenerate path databases and remove existing format files, if any
+		// Regenerate path databases and remove existing format files (if any) so that they will be properly regenerated
+		// in subsequent compilation with consideration for newly enabled/disabled languages
 		try {
 			shell.fork(new String[] { "rm", "-r", environment.getTeXMFRootDirectory() + "/texmf-var/web2c" }, null);
 			runFinalMakeLSR();

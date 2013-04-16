@@ -7,6 +7,12 @@ import lah.spectre.multitask.TaskState;
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
 
+/**
+ * Task to generate FONTCONFIG configuration file and the font cache
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class MakeFontConfigurations extends Task {
 
 	private static final String[] FC_CACHE_CMD = new String[] { "fc-cache" };

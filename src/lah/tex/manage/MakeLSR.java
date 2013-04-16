@@ -8,6 +8,12 @@ import lah.spectre.stream.StreamRedirector;
 import lah.spectre.stream.Streams;
 import lah.tex.Task;
 
+/**
+ * Task to generate Kpathsea's ls-R files
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class MakeLSR extends Task {
 
 	/**
