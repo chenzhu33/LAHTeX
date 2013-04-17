@@ -44,6 +44,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 */
 	protected static TimedShell shell;
 
+	protected static ResourceBundle strings;
+
 	protected static TeXMF task_manager;
 
 	private static File texmfcnf_file, texmfcnf_src;
@@ -126,6 +128,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		shell.export("TEXMFCNF", texmf_root + "/texmf-var" + ":" + texmf_root + "/texmf/web2c");
 		texmfcnf_file = new File(texmf_root + "/texmf-var/texmf.cnf");
 		texmfcnf_src = new File(texmf_root + "/texmf/web2c/texmf.cnf");
+		strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 	}
 
 	private ConcurrentLinkedQueue<Task> dependent_tasks;
@@ -161,7 +164,6 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	}
 
 	public String getStatusString() {
-		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		switch (state) {
 		case PENDING:
 			if (dependent_tasks.isEmpty())

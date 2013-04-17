@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -139,14 +138,13 @@ public class InstallPackage extends Task {
 						.matcher(content).replaceFirst("return a");
 				Streams.writeStringToFile(content, lualibs_file_lua, false);
 			} catch (IOException e) {
-				System.out.println("Error modifying lualibs-file.lua");
+				// System.out.println("Error modifying lualibs-file.lua");
 			}
 		}
 	}
 
 	@Override
 	public String getDescription() {
-		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		return strings.getString("install_") + Collections.stringOfArray(packages, " ", null, null);
 	}
 
@@ -182,7 +180,6 @@ public class InstallPackage extends Task {
 	@Override
 	public String getStatusString() {
 		if (state == TaskState.EXECUTING) {
-			ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 			if (pending_packages == null)
 				return strings.getString("computing_dependency");
 			else

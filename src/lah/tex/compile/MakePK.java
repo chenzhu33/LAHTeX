@@ -2,7 +2,6 @@ package lah.tex.compile;
 
 import java.io.File;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import lah.spectre.CommandLineArguments;
 
@@ -17,7 +16,6 @@ public class MakePK extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		return strings.getString("make_pk_font") + missing_file;
 	}
 

@@ -1,7 +1,6 @@
 package lah.tex.compile;
 
 import java.io.File;
-import java.util.ResourceBundle;
 
 public class MakeTFM extends CompileDocument {
 
@@ -13,7 +12,6 @@ public class MakeTFM extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		return strings.getString("make_tfm") + name + ".tfm";
 	}
 

@@ -37,7 +37,7 @@ public class MakeLanguageConfigurations extends Task {
 
 	@Override
 	public String getDescription() {
-		return "Generate language configurations";
+		return strings.getString("generate_lang_config");
 	}
 
 	@Override

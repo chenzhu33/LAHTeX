@@ -1,13 +1,18 @@
 package lah.tex.compile;
 
 import java.io.File;
-import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lah.spectre.multitask.TaskState;
 import lah.tex.manage.MakeLanguageConfigurations;
 
+/**
+ * Task to generate format (memory dump) files
+ * 
+ * @author L.A.H.
+ * 
+ */
 public class MakeFMT extends CompileDocument {
 
 	/**
@@ -64,7 +69,6 @@ public class MakeFMT extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		ResourceBundle strings = ResourceBundle.getBundle("lah.tex.translate.strings", environment.getLocale());
 		return strings.getString("make_format_") + format;
 	}
 
