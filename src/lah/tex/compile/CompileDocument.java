@@ -2,6 +2,7 @@ package lah.tex.compile;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -244,7 +245,8 @@ public class CompileDocument extends Task implements IBufferProcessor {
 				return;
 			}
 		} else {
-			setException(new FileNotFoundException(tex_src_file + " does not exist!"));
+			setException(new FileNotFoundException(MessageFormat.format(
+					strings.getString("exception_input_file_not_exist"), tex_src_file)));
 			return;
 		}
 	}

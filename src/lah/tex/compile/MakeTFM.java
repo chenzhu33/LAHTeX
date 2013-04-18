@@ -12,7 +12,7 @@ public class MakeTFM extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		return strings.getString("make_tfm") + name + ".tfm";
+		return strings.getString("desc_generate_tfm") + name + ".tfm";
 	}
 
 	@Override

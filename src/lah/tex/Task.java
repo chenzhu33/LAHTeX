@@ -1,6 +1,7 @@
 package lah.tex;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,7 +45,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 */
 	protected static TimedShell shell;
 
-	protected static ResourceBundle strings;
+	public static ResourceBundle strings;
 
 	protected static TeXMF task_manager;
 
@@ -167,15 +168,15 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		switch (state) {
 		case PENDING:
 			if (dependent_tasks.isEmpty())
-				return strings.getString("pending");
+				return strings.getString("state_pending");
 			else
-				return strings.getString("waiting_for_dependent_task");
+				return strings.getString("state_waiting_for_dependency");
 		case EXECUTING:
-			return strings.getString("executing");
+			return strings.getString("state_executing");
 		case COMPLETE:
 			if (exception != null)
-				return strings.getString("error_") + exception.getMessage();
-			return strings.getString("complete_successfully");
+				return MessageFormat.format(strings.getString("state_error_"), exception.getMessage());
+			return strings.getString("state_complete_successfully");
 		default:
 			return null;
 		}
@@ -248,15 +249,15 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		if (exception instanceof SolvableException) {
 			// Exception is already encountered
 			if (solvable_exceptions.contains(exception)) {
-				this.exception = new Exception("<" + exception.getMessage()
-						+ "> is encountered again. Previous attempt to fix it probably failed.");
+				this.exception = new Exception(MessageFormat.format(strings.getString("exception_encounter_again"),
+						exception.getMessage()));
 				return;
 			}
 
 			// Already at maximum tolerance
 			solvable_exceptions.add((SolvableException) exception);
 			if (solvable_exceptions.size() > MAX_NUM_SOLVABLE_EXCEPTIONS) {
-				this.exception = new Exception("Too many exceptions!");
+				this.exception = new Exception(strings.getString("exception_too_many_exceptions"));
 				return;
 			}
 
@@ -283,7 +284,6 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	protected synchronized void setState(TaskState state) {
 		this.state = state;
 		this.is_successful = (this.state == TaskState.COMPLETE && !hasException());
-		// System.out.println(getDescription() + " : " + getStatusString());
 	}
 
 	@Override

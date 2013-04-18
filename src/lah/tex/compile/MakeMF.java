@@ -30,7 +30,7 @@ public class MakeMF extends Task {
 
 	@Override
 	public String getDescription() {
-		return strings.getString("generate_metafont_font_") + name + ".mf";
+		return strings.getString("desc_generate_metafont_font_") + name + ".mf";
 	}
 
 	private String getRealSize(int pointsize) {
@@ -66,14 +66,14 @@ public class MakeMF extends Task {
 			String ptsizestr = rootname_pointsize_matcher.group(2);
 			// System.out.println("Root name = " + rootname);
 			// System.out.println("Point size = " + ptsizestr);
-			if (ptsizestr.isEmpty()) {
-				setException(new Exception("Invalid point size input for mktexmf"));
+			if (ptsizestr.length() == 0) {
+				setException(new Exception("makemf_invalid_point_size"));
 				return;
 			} else
 				realsize = getRealSize(Integer.parseInt(ptsizestr));
 		} else {
 			// Invalid name pattern
-			setException(new Exception("Invalid font name pattern in mktexmf"));
+			setException(new Exception("makemf_invalid_font_name"));
 			return;
 		}
 

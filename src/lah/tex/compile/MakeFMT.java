@@ -69,7 +69,7 @@ public class MakeFMT extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		return strings.getString("make_format_") + format;
+		return strings.getString("desc_generate_format_") + format;
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package lah.tex.exceptions;
 
+import java.text.MessageFormat;
+
 import lah.spectre.Collections;
 import lah.tex.Task;
 import lah.tex.compile.MakeFMT;
@@ -35,11 +37,14 @@ public class TeXMFFileNotFoundException extends SolvableException {
 
 	@Override
 	public String getMessage() {
-		return "Missing "
-				+ missing_file
-				+ (missing_packages == null ? "" : "\nProbably package "
-						+ Collections.stringOfArray(missing_packages, ", ", null, null)
-						+ (missing_packages.length > 1 ? " are" : " is") + " either not installed or corrupted.");
+		String main_message = MessageFormat.format(Task.strings.getString("missing_file"), missing_file);
+		if (missing_packages == null) {
+			return main_message;
+		} else {
+			return main_message
+					+ MessageFormat.format(Task.strings.getString("missing_package_guessed"),
+							Collections.stringOfArray(missing_packages, ", ", null, null));
+		}
 	}
 
 	@Override

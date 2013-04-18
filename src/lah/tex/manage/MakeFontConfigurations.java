@@ -19,7 +19,7 @@ public class MakeFontConfigurations extends Task {
 
 	@Override
 	public String getDescription() {
-		return "Generate fontconfig configuration and cache";
+		return strings.getString("desc_generate_fontconfig_cache");
 	}
 
 	@Override

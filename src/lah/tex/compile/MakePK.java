@@ -16,7 +16,7 @@ public class MakePK extends CompileDocument {
 
 	@Override
 	public String getDescription() {
-		return strings.getString("make_pk_font") + missing_file;
+		return strings.getString("desc_generate_pk_font") + missing_file;
 	}
 
 	/**
