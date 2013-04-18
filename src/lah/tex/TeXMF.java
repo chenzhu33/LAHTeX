@@ -71,9 +71,19 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		notifyEnvironmentChanged();
 	}
 
+	/**
+	 * Add a task to a group and enqueue it for execution.
+	 * 
+	 * This method has default access level since the intention is only to allow task to submit issue resolution tasks.
+	 * 
+	 * @param task
+	 *            Task to add
+	 * @param group
+	 *            Containing group, for some unknown reason, this might be {@code null}
+	 */
 	void add(Task task, TaskGroup group) {
 		task.setGroup(group);
-		if (task != group.getMainTask() && !group.subordinated_tasks.contains(task))
+		if (task != null && group != null && task != group.getMainTask() && !group.subordinated_tasks.contains(task))
 			group.subordinated_tasks.add(task);
 		enqueue(task);
 	}
@@ -107,16 +117,22 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		}
 		if (result_task != null) {
 			TaskGroup result_group = new TaskGroup(result_task);
-			task_groups.add(result_group);
+			synchronized (task_groups) {
+				task_groups.add(result_group);
+			}
 			add(result_task, result_group);
 		}
 		return result_task;
 	}
 
-	public String[] getAllLanguages() throws Exception {
-		return null;
-	}
-
+	/**
+	 * Generate the dropbox URL for a package
+	 * 
+	 * @param package_name
+	 *            Name of package to get Dropbox URL for
+	 * @return URL to the author's shared package file
+	 * @throws Exception
+	 */
 	public String getDropboxPackageURL(String package_name) throws Exception {
 		if (dropbox_keys_map == null) {
 			Map<String, String> temp_dropbox_keys_map = new TreeMap<String, String>();
@@ -130,6 +146,13 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		return (key == null ? null : DROPBOX_ARCHIVE + key + "/" + package_name + InstallPackage.PACKAGE_EXTENSION);
 	}
 
+	/**
+	 * Get the list of task groups
+	 * 
+	 * Client is advised to synchronized on access to this list
+	 * 
+	 * @return The list of task group
+	 */
 	public List<TaskGroup> getTaskGroups() {
 		return task_groups;
 	}
@@ -152,19 +175,30 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		}
 	}
 
+	/**
+	 * Method to be invoked by client when there are changes in environment
+	 */
 	public void notifyEnvironmentChanged() {
 		Task.setupEnvironment();
 	}
 
+	/**
+	 * Remove an existing task
+	 * 
+	 * @param task
+	 *            Task to remove from management
+	 */
 	public void remove(Task task) {
-		cancel(task);
-		TaskGroup group = task.getGroup();
-		if (group.main_task == task) {
-			for (Task subtask : group.subordinated_tasks)
-				cancel(subtask);
-			task_groups.remove(group);
-		} else
-			group.subordinated_tasks.remove(task);
+		synchronized (task_groups) {
+			cancel(task);
+			TaskGroup group = task.getGroup();
+			if (group.main_task == task) {
+				for (Task subtask : group.subordinated_tasks)
+					cancel(subtask);
+				task_groups.remove(group);
+			} else
+				group.subordinated_tasks.remove(task);
+		}
 	}
 
 	/**
