@@ -11,6 +11,6 @@ Translate
 E.g. the German file is called strings_de.properties (de for Deutschland)
 1. Copy the content from the original strings.properties into yours.
 1. Translate the strings in your favorite text editor.
-1. If your language has special carachters, which are not part of the ascii table use the tool "native2ascii" to convert the file
+1. If your language contains special characters, which are not part of the ascii table use the tool "native2ascii" to convert the file
 
 You translated the Project successfully now you only have to make a Pull Request
