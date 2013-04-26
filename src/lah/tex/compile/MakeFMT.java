@@ -73,6 +73,12 @@ public class MakeFMT extends CompileDocument {
 	}
 
 	@Override
+	public String getOutputType() {
+		// TODO Implement appropriately
+		return null;
+	}
+
+	@Override
 	public void run() {
 		reset();
 		try {

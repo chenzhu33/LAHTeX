@@ -161,7 +161,14 @@ public class CompileDocument extends Task implements IBufferProcessor {
 				tex_src_file.getName(), getOutputType()));
 	}
 
+	/**
+	 * Get the file type of the expected output file
+	 * 
+	 * @return Type of output file (if this task completes successfully)
+	 */
 	public String getOutputType() {
+		if (tex_engine == null)
+			return null;
 		if (tex_engine.equals("pdftex") || tex_engine.equals("pdflatex") || tex_engine.equals("xetex")
 				|| tex_engine.equals("xelatex") || tex_engine.equals("luatex") || tex_engine.equals("lualatex"))
 			return "pdf";
