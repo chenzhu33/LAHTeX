@@ -229,6 +229,8 @@ public class CompileDocument extends Task implements IBufferProcessor {
 		super.reset();
 		output_buffer.delete(0, output_buffer.length());
 		nonewline_output_buffer.delete(0, nonewline_output_buffer.length());
+		if (logs != null)
+			logs.clear();
 	}
 
 	@Override
