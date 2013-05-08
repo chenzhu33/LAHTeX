@@ -3,7 +3,9 @@ package lah.tex;
 import java.io.File;
 import java.util.Locale;
 
-public interface IEnvironment {
+import lah.spectre.multitask.TaskStateListener;
+
+public interface IEnvironment extends TaskStateListener<Task> {
 
 	public static final String BUSYBOX = "busybox";
 

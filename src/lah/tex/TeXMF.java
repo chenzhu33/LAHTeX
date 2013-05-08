@@ -121,6 +121,7 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 			}
 			add(result_task, result_group);
 		}
+		onStateChanged(result_task);
 		return result_task;
 	}
 
@@ -179,6 +180,12 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 	 */
 	public void notifyEnvironmentChanged() {
 		Task.setupEnvironment();
+	}
+
+	@Override
+	public void onStateChanged(Task task) {
+		if (Task.environment != null)
+			Task.environment.onStateChanged(task);
 	}
 
 	/**

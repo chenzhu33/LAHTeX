@@ -136,8 +136,6 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	protected Exception exception;
 
-	private boolean is_successful;
-
 	private List<SolvableException> solvable_exceptions = new LinkedList<SolvableException>();
 
 	protected TaskState state;
@@ -145,8 +143,8 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	private TaskGroup task_group;
 
 	protected Task() {
-		state = TaskState.PENDING;
 		dependent_tasks = new ConcurrentLinkedQueue<Task>();
+		setState(TaskState.PENDING);
 	}
 
 	private synchronized void addDependency(Task task) {
@@ -173,6 +171,10 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 				return strings.getString("state_waiting_for_dependency");
 		case EXECUTING:
 			return strings.getString("state_executing");
+		case ERROR:
+			if (exception != null)
+				return MessageFormat.format(strings.getString("state_error_"), exception.getMessage());
+			return strings.getString("state_error_");
 		case COMPLETE:
 			if (exception != null)
 				return MessageFormat.format(strings.getString("state_error_"), exception.getMessage());
@@ -189,7 +191,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 
 	@Override
 	public boolean isDone() {
-		return state == TaskState.COMPLETE;
+		return state == TaskState.COMPLETE || state == TaskState.ERROR;
 	}
 
 	@Override
@@ -206,13 +208,15 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	}
 
 	public boolean isMainTask() {
-		return getGroup().getMainTask() == this;
+		return getGroup() != null && getGroup().getMainTask() == this;
 	}
 
 	@Override
 	public boolean isSuccessful() {
-		// return isComplete() && !hasException(); // TODO implement properly in each subclass
-		return is_successful;
+		// TODO implement properly in each subclass
+		// return isComplete() && !hasException();
+		// return is_successful;
+		return state == TaskState.COMPLETE;
 	}
 
 	/**
@@ -220,8 +224,7 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 */
 	public void reset() {
 		this.exception = null;
-		this.is_successful = false;
-		this.state = TaskState.PENDING;
+		setState(TaskState.PENDING);
 		// if (solvable_exceptions.size() == MAX_NUM_SOLVABLE_EXCEPTIONS)
 		// solvable_exceptions.clear();
 	}
@@ -242,10 +245,9 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 	 * 
 	 * @param exception
 	 */
-	protected synchronized void setException(Exception exception) {
+	protected final synchronized void setException(Exception exception) {
 		this.exception = exception;
-		this.state = TaskState.COMPLETE;
-		this.is_successful = false;
+		setState(TaskState.ERROR);
 		if (exception instanceof SolvableException) {
 			// Exception is already encountered
 			if (solvable_exceptions.contains(exception)) {
@@ -281,9 +283,11 @@ public abstract class Task implements IResult, lah.spectre.multitask.Task {
 		this.task_group = group;
 	}
 
-	protected synchronized void setState(TaskState state) {
-		this.state = state;
-		this.is_successful = (this.state == TaskState.COMPLETE && !hasException());
+	protected final synchronized void setState(TaskState state) {
+		if (state != this.state) {
+			this.state = state;
+			task_manager.onStateChanged(this);
+		}
 	}
 
 	@Override
