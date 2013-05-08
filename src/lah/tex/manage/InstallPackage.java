@@ -242,6 +242,9 @@ public class InstallPackage extends Task {
 			try {
 				pending_packages = addAllDependentPackages(packages);
 				package_states = new PackageState[pending_packages.length];
+				// This state change should not affect `executability` status of other tasks so there is no need to
+				// notify the task manager
+				environment.onStateChanged(this);
 			} catch (Exception e) {
 				setException(e);
 				return;
@@ -273,6 +276,7 @@ public class InstallPackage extends Task {
 						pkg_file.getParentFile());
 				setPackageState(i, PackageState.PACKAGE_SUCCESSFULLY_INSTALLED);
 				has_lualibs = has_lualibs || pending_packages[i].equals("lualibs");
+				environment.onStateChanged(this); // notify environment directly
 			} catch (SystemFileNotFoundException e) {
 				setException(e);
 				return;
