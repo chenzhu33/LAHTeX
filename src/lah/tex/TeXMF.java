@@ -58,11 +58,14 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 		return texmf_instance;
 	}
 
+	private Map<Integer, TaskGroup> task_group_id_map;
+
 	private List<TaskGroup> task_groups;
 
 	private TeXMF(IEnvironment environment) {
 		// super(Executors.newFixedThreadPool(3));
 		this.task_groups = new ArrayList<TaskGroup>();
+		this.task_group_id_map = new TreeMap<Integer, TaskGroup>();
 		Task.task_manager = this;
 		Task.environment = environment;
 		Task.shell = new TimedShell();
@@ -118,6 +121,7 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 			TaskGroup result_group = new TaskGroup(result_task);
 			synchronized (task_groups) {
 				task_groups.add(result_group);
+				task_group_id_map.put(result_group.getId(), result_group);
 			}
 			add(result_task, result_group);
 		}
@@ -155,6 +159,10 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 	 */
 	public List<TaskGroup> getTaskGroups() {
 		return task_groups;
+	}
+
+	public TaskGroup getTaskGroupWithId(int id) {
+		return task_group_id_map.get(id);
 	}
 
 	/**
@@ -202,6 +210,7 @@ public class TeXMF extends ScheduleTaskManager<Task> {
 				for (Task subtask : group.subordinated_tasks)
 					cancel(subtask);
 				task_groups.remove(group);
+				task_group_id_map.remove(group.getId());
 			} else
 				group.subordinated_tasks.remove(task);
 		}

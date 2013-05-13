@@ -14,6 +14,10 @@ public class TaskGroup {
 		this.subordinated_tasks = new LinkedList<Task>();
 	}
 
+	public int getId() {
+		return System.identityHashCode(this);
+	}
+
 	public Task getMainTask() {
 		return main_task;
 	}

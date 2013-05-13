@@ -77,45 +77,42 @@ public class InstallPackage extends Task {
 	}
 
 	/**
-	 * Modify the list of packages to contain all dependent packages as well.
+	 * Extend a list of packages to contain all dependent packages as well
 	 * 
-	 * @param pkgs
+	 * @param initial_packages
 	 */
-	private String[] addAllDependentPackages(String[] pkgs) throws Exception {
+	private String[] addAllDependentPackages(String[] initial_packages) throws Exception {
 		if (dependency_map == null)
 			loadDependMap();
 
 		// Queue containing the packages whose dependencies are to be added
 		Queue<String> queue = new LinkedList<String>();
 
-		// Set of all packages we have found, for efficient membership
-		// testing to decide whether a package is already processed
+		// Set of all packages found, for efficient membership testing to decide whether a package is already processed
 		Set<String> found_packages = new TreeSet<String>();
 
 		List<String> pkgs_to_install = new LinkedList<String>();
 
 		// Initialize the queue & found packages with the input list
-		for (String p : pkgs) {
-			queue.add(p);
-			found_packages.add(p);
-			pkgs_to_install.add(p);
+		for (String pkg : initial_packages) {
+			queue.add(pkg);
+			found_packages.add(pkg);
+			pkgs_to_install.add(pkg);
 		}
 
-		// Process until there is no more package to process i.e. we have
-		// added all the necessary dependencies
+		// Process until there is no more package to process i.e. we have added all the necessary dependencies
 		while (!queue.isEmpty()) {
-			// Pick a pending package & add its dependency that has not been
-			// added earlier
-			String p = queue.poll();
-			String[] pdepstr = dependency_map.get(p);
-			if (pdepstr != null) {
-				for (String k : pdepstr) {
-					if (k.endsWith(".ARCH"))
-						k = k.substring(0, k.length() - 4) + environment.getArchitecture();
-					if (!found_packages.contains(k)) {
-						queue.add(k);
-						found_packages.add(k);
-						pkgs_to_install.add(k);
+			// Pick a pending package & add its dependency that has not been added earlier
+			String pkg = queue.poll();
+			String[] pkg_deps = dependency_map.get(pkg);
+			if (pkg_deps != null) {
+				for (String d : pkg_deps) {
+					if (d.endsWith(".ARCH"))
+						d = d.substring(0, d.length() - 4) + environment.getArchitecture();
+					if (!found_packages.contains(d)) {
+						queue.add(d);
+						found_packages.add(d);
+						pkgs_to_install.add(d);
 					}
 				}
 			}
